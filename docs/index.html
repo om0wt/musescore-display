@@ -1,0 +1,366 @@
+<!DOCTYPE html><html class="default" lang="en" data-base="./"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>musescore-display</title><meta name="description" content="Documentation for musescore-display"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="assets/style.css"/><link rel="stylesheet" href="assets/highlight.css"/><script defer src="assets/main.js"></script><script async src="assets/icons.js" id="tsd-icons-script"></script><script async src="assets/search.js" id="tsd-search-script"></script><script async src="assets/navigation.js" id="tsd-nav-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar"><div class="tsd-toolbar-contents container"><a href="index.html" class="title">musescore-display</a><div id="tsd-toolbar-links"></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/><ul role="listbox" id="tsd-search-results"></ul><div id="tsd-search-status" aria-live="polite" aria-atomic="true"><div>Preparing search index...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-menu"></use></svg></a></div></header><div class="container container-main"><div class="col-content"><div class="tsd-page-title"><h1>musescore-display</h1></div><div class="tsd-panel tsd-typography"><h1 id="musescore-display" class="tsd-anchor-link">musescore-display<a href="#musescore-display" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h1>
+<p>A TypeScript library that renders MuseScore <code>.mscz</code> and <code>.mscx</code> files directly in the browser.</p>
+<p>It parses the native MuseScore XML format, converts it to MusicXML, and renders it using <a href="https://opensheetmusicdisplay.org/">OpenSheetMusicDisplay (OSMD)</a>.</p>
+<h2 id="features" class="tsd-anchor-link">Features<a href="#features" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<h3 id="notation" class="tsd-anchor-link">Notation<a href="#notation" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li>Notes, rests, and chords (all standard durations)</li>
+<li>Dotted notes and double dots</li>
+<li>Accidentals (sharp, flat, natural, double sharp, double flat)</li>
+<li>Key signatures and time signatures</li>
+<li>Clefs (treble, bass, alto, tenor) and mid-measure clef changes</li>
+<li>Ties and slurs</li>
+<li>Multiple voices per staff</li>
+<li>Multiple staves per part (e.g., piano grand staff)</li>
+<li>Multiple parts/instruments</li>
+<li>Transposing instruments (written pitch via <code>tpc2</code>)</li>
+<li>Beaming (explicit beam groups for eighth notes and shorter)</li>
+<li>Repeat barlines (forward/backward with repeat counts)</li>
+<li>Double barlines and final barlines (auto-emitted on last measure)</li>
+<li>Tempo markings (metronome mark + MIDI sound tempo)</li>
+</ul>
+<h3 id="text-and-lyrics" class="tsd-anchor-link">Text and Lyrics<a href="#text-and-lyrics" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li>Title, composer, and lyricist (rendered via MusicXML credit elements)</li>
+<li>Multi-verse lyrics with syllabic hyphenation (begin/middle/end/single)</li>
+<li>Verse labels (e.g., &quot;Kyrie: 1.&quot;, &quot;Gloria: 2.&quot;) displayed inline on their respective verse lines</li>
+</ul>
+<h3 id="playback-interactive" class="tsd-anchor-link">Playback / Interactive<a href="#playback-interactive" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li>Transposition by semitones (via OSMD's TransposeCalculator)</li>
+<li>Zoom in/out with live re-rendering</li>
+</ul>
+<h3 id="format-support" class="tsd-anchor-link">Format Support<a href="#format-support" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li>MuseScore 2.x <code>.mscx</code> files (XML)</li>
+<li>MuseScore 3.x <code>.mscx</code> files (XML)</li>
+<li>MuseScore 3.x <code>.mscz</code> files (ZIP-compressed)</li>
+</ul>
+<h2 id="quick-start" class="tsd-anchor-link">Quick Start<a href="#quick-start" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<h3 id="install" class="tsd-anchor-link">Install<a href="#install" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="bash"><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">install</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="run-the-demo" class="tsd-anchor-link">Run the Demo<a href="#run-the-demo" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="bash"><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">run</span><span class="hl-1"> </span><span class="hl-2">start</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Opens a browser at <a href="http://localhost:8001">http://localhost:8001</a> with:</p>
+<ul>
+<li>Sample file dropdown (3 included test scores)</li>
+<li>File picker and drag-and-drop for custom <code>.mscz</code>/<code>.mscx</code> files</li>
+<li>Zoom controls (+/- buttons, keyboard shortcuts)</li>
+<li>Transpose controls (semitone input)</li>
+<li>Debug tools (re-render, download generated MusicXML, clear)</li>
+</ul>
+<h3 id="build-for-production" class="tsd-anchor-link">Build for Production<a href="#build-for-production" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="bash"><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">run</span><span class="hl-1"> </span><span class="hl-2">build</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Outputs <code>build/musescore-display.min.js</code> (UMD bundle) and TypeScript declarations.</p>
+<h2 id="usage" class="tsd-anchor-link">Usage<a href="#usage" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<h3 id="browser-script-tag" class="tsd-anchor-link">Browser (Script Tag)<a href="#browser-script-tag" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="html"><span class="hl-3">&lt;</span><span class="hl-4">script</span><span class="hl-5"> </span><span class="hl-6">src</span><span class="hl-5">=</span><span class="hl-7">&quot;musescore-display.min.js&quot;</span><span class="hl-3">&gt;&lt;/</span><span class="hl-4">script</span><span class="hl-3">&gt;</span><br/><span class="hl-3">&lt;</span><span class="hl-4">div</span><span class="hl-1"> </span><span class="hl-6">id</span><span class="hl-1">=</span><span class="hl-7">&quot;score&quot;</span><span class="hl-3">&gt;&lt;/</span><span class="hl-4">div</span><span class="hl-3">&gt;</span><br/><span class="hl-3">&lt;</span><span class="hl-4">script</span><span class="hl-3">&gt;</span><br/><span class="hl-5">  </span><span class="hl-8">const</span><span class="hl-5"> </span><span class="hl-9">display</span><span class="hl-5"> </span><span class="hl-1">=</span><span class="hl-5"> </span><span class="hl-8">new</span><span class="hl-5"> </span><span class="hl-10">musescoreDisplay</span><span class="hl-5">.</span><span class="hl-0">MuseScoreDisplay</span><span class="hl-5">(</span><span class="hl-2">&quot;score&quot;</span><span class="hl-5">);</span><br/><span class="hl-5">  </span><span class="hl-10">display</span><span class="hl-5">.</span><span class="hl-0">load</span><span class="hl-5">(</span><span class="hl-2">&quot;path/to/score.mscz&quot;</span><span class="hl-5">);</span><br/><span class="hl-3">&lt;/</span><span class="hl-4">script</span><span class="hl-3">&gt;</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="es-module-typescript" class="tsd-anchor-link">ES Module / TypeScript<a href="#es-module-typescript" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="typescript"><span class="hl-11">import</span><span class="hl-1"> { </span><span class="hl-10">MuseScoreDisplay</span><span class="hl-1"> } </span><span class="hl-11">from</span><span class="hl-1"> </span><span class="hl-2">&quot;musescore-display&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-8">const</span><span class="hl-1"> </span><span class="hl-9">display</span><span class="hl-1"> = </span><span class="hl-8">new</span><span class="hl-1"> </span><span class="hl-0">MuseScoreDisplay</span><span class="hl-1">(</span><span class="hl-2">&quot;score-container&quot;</span><span class="hl-1">, {</span><br/><span class="hl-1">  </span><span class="hl-10">autoResize:</span><span class="hl-1"> </span><span class="hl-8">true</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-10">zoom:</span><span class="hl-1"> </span><span class="hl-12">1.0</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-10">drawingParameters:</span><span class="hl-1"> </span><span class="hl-2">&quot;default&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">});</span><br/><br/><span class="hl-13">// Load from various sources</span><br/><span class="hl-11">await</span><span class="hl-1"> </span><span class="hl-10">display</span><span class="hl-1">.</span><span class="hl-0">load</span><span class="hl-1">(</span><span class="hl-10">file</span><span class="hl-1">);              </span><span class="hl-13">// File or Blob (e.g., from &lt;input type=&quot;file&quot;&gt;)</span><br/><span class="hl-11">await</span><span class="hl-1"> </span><span class="hl-10">display</span><span class="hl-1">.</span><span class="hl-0">load</span><span class="hl-1">(</span><span class="hl-10">arrayBuffer</span><span class="hl-1">);       </span><span class="hl-13">// ArrayBuffer (raw bytes)</span><br/><span class="hl-11">await</span><span class="hl-1"> </span><span class="hl-10">display</span><span class="hl-1">.</span><span class="hl-0">load</span><span class="hl-1">(</span><span class="hl-10">mscxXmlString</span><span class="hl-1">);     </span><span class="hl-13">// Raw MSCX XML string</span><br/><span class="hl-11">await</span><span class="hl-1"> </span><span class="hl-10">display</span><span class="hl-1">.</span><span class="hl-0">load</span><span class="hl-1">(</span><span class="hl-2">&quot;https://...&quot;</span><span class="hl-1">);     </span><span class="hl-13">// URL (fetched automatically)</span><br/><br/><span class="hl-13">// Zoom</span><br/><span class="hl-10">display</span><span class="hl-1">.</span><span class="hl-10">zoom</span><span class="hl-1"> = </span><span class="hl-12">1.5</span><span class="hl-1">;                    </span><span class="hl-13">// 150%</span><br/><span class="hl-10">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-10">display</span><span class="hl-1">.</span><span class="hl-10">zoom</span><span class="hl-1">);             </span><span class="hl-13">// current zoom level</span><br/><br/><span class="hl-13">// Transpose</span><br/><span class="hl-10">display</span><span class="hl-1">.</span><span class="hl-0">transpose</span><span class="hl-1">(</span><span class="hl-12">3</span><span class="hl-1">);                  </span><span class="hl-13">// up 3 semitones</span><br/><span class="hl-10">display</span><span class="hl-1">.</span><span class="hl-0">transpose</span><span class="hl-1">(-</span><span class="hl-12">2</span><span class="hl-1">);                 </span><span class="hl-13">// down 2 semitones</span><br/><span class="hl-10">display</span><span class="hl-1">.</span><span class="hl-0">transpose</span><span class="hl-1">(</span><span class="hl-12">0</span><span class="hl-1">);                  </span><span class="hl-13">// reset to original key</span><br/><br/><span class="hl-13">// Clear</span><br/><span class="hl-10">display</span><span class="hl-1">.</span><span class="hl-0">clear</span><span class="hl-1">();</span><br/><br/><span class="hl-13">// Debug: access generated MusicXML</span><br/><span class="hl-10">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-10">display</span><span class="hl-1">.</span><span class="hl-10">lastMusicXml</span><span class="hl-1">);</span><br/><br/><span class="hl-13">// Advanced: access underlying OSMD instance</span><br/><span class="hl-10">display</span><span class="hl-1">.</span><span class="hl-10">osmdInstance</span><span class="hl-1">.</span><span class="hl-10">cursor</span><span class="hl-1">.</span><span class="hl-0">show</span><span class="hl-1">();</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="constructor-options" class="tsd-anchor-link">Constructor Options<a href="#constructor-options" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>autoResize</code></td>
+<td>boolean</td>
+<td><code>true</code></td>
+<td>Re-render on window resize</td>
+</tr>
+<tr>
+<td><code>zoom</code></td>
+<td>number</td>
+<td><code>1.0</code></td>
+<td>Initial zoom level (1.0 = 100%)</td>
+</tr>
+<tr>
+<td><code>drawingParameters</code></td>
+<td>string</td>
+<td><code>&quot;default&quot;</code></td>
+<td>OSMD drawing parameters preset</td>
+</tr>
+</tbody>
+</table>
+<h3 id="api-reference" class="tsd-anchor-link">API Reference<a href="#api-reference" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<table>
+<thead>
+<tr>
+<th>Method / Property</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>load(content)</code></td>
+<td><code>Promise&lt;void&gt;</code></td>
+<td>Load and render a score from File, Blob, ArrayBuffer, XML string, or URL</td>
+</tr>
+<tr>
+<td><code>zoom</code></td>
+<td><code>number</code> (get/set)</td>
+<td>Zoom level (1.0 = 100%). Setting re-renders.</td>
+</tr>
+<tr>
+<td><code>transpose(semitones)</code></td>
+<td><code>void</code></td>
+<td>Transpose the score by N semitones and re-render</td>
+</tr>
+<tr>
+<td><code>currentTranspose</code></td>
+<td><code>number</code> (get)</td>
+<td>Current transposition in semitones</td>
+</tr>
+<tr>
+<td><code>clear()</code></td>
+<td><code>void</code></td>
+<td>Clear the rendered score</td>
+</tr>
+<tr>
+<td><code>lastMusicXml</code></td>
+<td><code>string</code> (get)</td>
+<td>The last generated MusicXML (for debugging)</td>
+</tr>
+<tr>
+<td><code>osmdInstance</code></td>
+<td><code>OpenSheetMusicDisplay</code> (get)</td>
+<td>Direct access to the underlying OSMD instance</td>
+</tr>
+</tbody>
+</table>
+<h3 id="lower-level-api" class="tsd-anchor-link">Lower-Level API<a href="#lower-level-api" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>The individual pipeline stages are also exported for advanced use:</p>
+<pre><code class="typescript"><span class="hl-11">import</span><span class="hl-1"> { </span><span class="hl-10">readMscx</span><span class="hl-1">, </span><span class="hl-10">parseMscx</span><span class="hl-1">, </span><span class="hl-10">convertToMusicXml</span><span class="hl-1"> } </span><span class="hl-11">from</span><span class="hl-1"> </span><span class="hl-2">&quot;musescore-display&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-13">// 1. Extract MSCX XML from .mscz (ZIP) or pass through .mscx</span><br/><span class="hl-8">const</span><span class="hl-1"> </span><span class="hl-9">mscxXml</span><span class="hl-1">: </span><span class="hl-14">string</span><span class="hl-1"> = </span><span class="hl-11">await</span><span class="hl-1"> </span><span class="hl-0">readMscx</span><span class="hl-1">(</span><span class="hl-10">arrayBufferOrString</span><span class="hl-1">);</span><br/><br/><span class="hl-13">// 2. Parse MSCX XML into an intermediate representation (IR)</span><br/><span class="hl-8">const</span><span class="hl-1"> </span><span class="hl-9">score</span><span class="hl-1">: </span><span class="hl-14">MscxScore</span><span class="hl-1"> = </span><span class="hl-0">parseMscx</span><span class="hl-1">(</span><span class="hl-10">mscxXml</span><span class="hl-1">);</span><br/><br/><span class="hl-13">// 3. Convert IR to MusicXML string</span><br/><span class="hl-8">const</span><span class="hl-1"> </span><span class="hl-9">musicXml</span><span class="hl-1">: </span><span class="hl-14">string</span><span class="hl-1"> = </span><span class="hl-0">convertToMusicXml</span><span class="hl-1">(</span><span class="hl-10">score</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<h4 id="tpc-utilities" class="tsd-anchor-link">TPC Utilities<a href="#tpc-utilities" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<pre><code class="typescript"><span class="hl-11">import</span><span class="hl-1"> { </span><span class="hl-10">tpcToStep</span><span class="hl-1">, </span><span class="hl-10">tpcToAlter</span><span class="hl-1">, </span><span class="hl-10">midiToOctave</span><span class="hl-1"> } </span><span class="hl-11">from</span><span class="hl-1"> </span><span class="hl-2">&quot;musescore-display&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-0">tpcToStep</span><span class="hl-1">(</span><span class="hl-12">14</span><span class="hl-1">);      </span><span class="hl-13">// &quot;C&quot;</span><br/><span class="hl-0">tpcToAlter</span><span class="hl-1">(</span><span class="hl-12">14</span><span class="hl-1">);     </span><span class="hl-13">// 0</span><br/><span class="hl-0">tpcToAlter</span><span class="hl-1">(</span><span class="hl-12">21</span><span class="hl-1">);     </span><span class="hl-13">// 1 (sharp)</span><br/><span class="hl-0">midiToOctave</span><span class="hl-1">(</span><span class="hl-12">60</span><span class="hl-1">);   </span><span class="hl-13">// 4 (middle C)</span>
+</code><button type="button">Copy</button></pre>
+
+<h2 id="architecture" class="tsd-anchor-link">Architecture<a href="#architecture" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<pre><code><span class="hl-1">.</span><span class="hl-0">mscz</span><span class="hl-1"> (</span><span class="hl-9">ZIP</span><span class="hl-1">) </span><span class="hl-10">or</span><span class="hl-1"> .</span><span class="hl-0">mscx</span><span class="hl-1"> (</span><span class="hl-9">XML</span><span class="hl-1">)</span><br/><span class="hl-1">        |</span><br/><span class="hl-1">        </span><span class="hl-10">v</span><br/><span class="hl-1">  </span><span class="hl-10">MsczReader</span><span class="hl-1">.</span><span class="hl-10">ts</span><span class="hl-1">          </span><span class="hl-10">Extract</span><span class="hl-1"> </span><span class="hl-9">MSCX</span><span class="hl-1"> </span><span class="hl-9">XML</span><span class="hl-1"> </span><span class="hl-10">from</span><span class="hl-1"> </span><span class="hl-9">ZIP</span><span class="hl-1"> </span><span class="hl-10">or</span><span class="hl-1"> </span><span class="hl-10">passthrough</span><br/><span class="hl-1">        |</span><br/><span class="hl-1">        </span><span class="hl-10">v</span><br/><span class="hl-1">  </span><span class="hl-10">MscxParser</span><span class="hl-1">.</span><span class="hl-10">ts</span><span class="hl-1">          </span><span class="hl-10">Parse</span><span class="hl-1"> </span><span class="hl-9">MSCX</span><span class="hl-1"> </span><span class="hl-9">XML</span><span class="hl-1"> -&gt; </span><span class="hl-10">Intermediate</span><span class="hl-1"> </span><span class="hl-0">Representation</span><span class="hl-1"> (</span><span class="hl-9">IR</span><span class="hl-1">)</span><br/><span class="hl-1">        |                (</span><span class="hl-10">MscxScore</span><span class="hl-1">, </span><span class="hl-10">MscxPart</span><span class="hl-1">, </span><span class="hl-10">MscxMeasure</span><span class="hl-1">, </span><span class="hl-10">MscxChord</span><span class="hl-1">, </span><span class="hl-10">etc</span><span class="hl-1">.)</span><br/><span class="hl-1">        </span><span class="hl-10">v</span><br/><span class="hl-1">  </span><span class="hl-10">MscxToMusicXml</span><span class="hl-1">.</span><span class="hl-10">ts</span><span class="hl-1">      </span><span class="hl-10">Convert</span><span class="hl-1"> </span><span class="hl-9">IR</span><span class="hl-1"> -&gt; </span><span class="hl-10">MusicXML</span><span class="hl-1"> </span><span class="hl-10">string</span><br/><span class="hl-1">        |</span><br/><span class="hl-1">        </span><span class="hl-10">v</span><br/><span class="hl-1">  </span><span class="hl-10">MuseScoreDisplay</span><span class="hl-1">.</span><span class="hl-10">ts</span><span class="hl-1">    </span><span class="hl-10">Load</span><span class="hl-1"> </span><span class="hl-10">MusicXML</span><span class="hl-1"> </span><span class="hl-10">into</span><span class="hl-1"> </span><span class="hl-9">OSMD</span><span class="hl-1"> </span><span class="hl-10">and</span><span class="hl-1"> </span><span class="hl-10">render</span><span class="hl-1"> </span><span class="hl-10">to</span><span class="hl-1"> </span><span class="hl-9">SVG</span><br/><span class="hl-1">        |</span><br/><span class="hl-1">        </span><span class="hl-10">v</span><br/><span class="hl-1">  </span><span class="hl-0">OpenSheetMusicDisplay</span><span class="hl-1">  (</span><span class="hl-9">OSMD</span><span class="hl-1"> </span><span class="hl-10">v1</span><span class="hl-1">.</span><span class="hl-12">9.6</span><span class="hl-1">) </span><span class="hl-10">renders</span><span class="hl-1"> </span><span class="hl-10">to</span><span class="hl-1"> </span><span class="hl-10">the</span><span class="hl-1"> </span><span class="hl-9">DOM</span>
+</code><button>Copy</button></pre>
+
+<h3 id="key-source-files" class="tsd-anchor-link">Key Source Files<a href="#key-source-files" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>src/MuseScoreDisplay.ts</code></td>
+<td>Public API class wrapping the full pipeline</td>
+</tr>
+<tr>
+<td><code>src/MsczReader.ts</code></td>
+<td>ZIP extraction (JSZip) for <code>.mscz</code>, passthrough for <code>.mscx</code></td>
+</tr>
+<tr>
+<td><code>src/MscxParser.ts</code></td>
+<td>MSCX XML parser (v2 + v3 formats) producing IR</td>
+</tr>
+<tr>
+<td><code>src/MscxToMusicXml.ts</code></td>
+<td>IR to MusicXML converter</td>
+</tr>
+<tr>
+<td><code>src/MscxTypes.ts</code></td>
+<td>TypeScript interfaces for the IR</td>
+</tr>
+<tr>
+<td><code>src/TpcUtils.ts</code></td>
+<td>Tonal Pitch Class math (TPC -&gt; step/alter/octave)</td>
+</tr>
+<tr>
+<td><code>src/ConvertHelpers.ts</code></td>
+<td>Lookup tables for durations, clefs, accidentals</td>
+</tr>
+<tr>
+<td><code>src/index.ts</code></td>
+<td>Public exports</td>
+</tr>
+<tr>
+<td><code>demo/demo.ts</code></td>
+<td>Demo page logic</td>
+</tr>
+<tr>
+<td><code>demo/index.html</code></td>
+<td>Demo page HTML template</td>
+</tr>
+</tbody>
+</table>
+<h2 id="demo-page" class="tsd-anchor-link">Demo Page<a href="#demo-page" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>The demo page (<code>npm run start</code>) provides a full-featured testing environment:</p>
+<h3 id="controls" class="tsd-anchor-link">Controls<a href="#controls" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li><strong>Sample dropdown</strong> -- 3 included test scores covering v2/v3 formats, multi-part, lyrics, slurs</li>
+<li><strong>Open File</strong> -- file picker for any <code>.mscz</code>/<code>.mscx</code> file</li>
+<li><strong>Drag &amp; Drop</strong> -- drop files anywhere on the page</li>
+<li><strong>Zoom</strong> -- +/- buttons, Reset button, keyboard shortcuts (<code>Ctrl/Cmd</code> + <code>+</code>/<code>-</code>/<code>0</code>)</li>
+<li><strong>Transpose</strong> -- semitone input (-12 to +12) with Apply button or Enter key</li>
+<li><strong>Re-render</strong> -- force re-render of the current score</li>
+<li><strong>Download MusicXML</strong> -- save the generated MusicXML for inspection</li>
+<li><strong>Clear</strong> -- remove the current score</li>
+</ul>
+<h3 id="url-parameters" class="tsd-anchor-link">URL Parameters<a href="#url-parameters" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Load a sample automatically via URL:</p>
+<pre><code><span class="hl-15">http</span><span class="hl-1">:</span><span class="hl-13">//localhost:8001/?sample=0          # Load by index (0, 1, 2)</span><br/><span class="hl-15">http</span><span class="hl-1">:</span><span class="hl-13">//localhost:8001/?sample=hark       # Load by name substring match</span><br/><span class="hl-15">http</span><span class="hl-1">:</span><span class="hl-13">//localhost:8001/?sample=boze       # Load by name substring match</span>
+</code><button>Copy</button></pre>
+
+<h3 id="debugging" class="tsd-anchor-link">Debugging<a href="#debugging" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>The generated MusicXML is accessible in the browser console:</p>
+<pre><code class="javascript"><span class="hl-10">window</span><span class="hl-1">.</span><span class="hl-10">__lastMusicXml</span><span class="hl-1">    </span><span class="hl-13">// Full MusicXML string</span>
+</code><button type="button">Copy</button></pre>
+
+<p>You can also use the &quot;Download MusicXML&quot; button to save it to a file for inspection in other tools.</p>
+<h2 id="test-scores" class="tsd-anchor-link">Test Scores<a href="#test-scores" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Three test scores are included in the repository root:</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Format</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>FileExample/Hark the Herald Angels Sing (No 209).mscx</code></td>
+<td>v2 <code>.mscx</code></td>
+<td>2-staff organ arrangement</td>
+</tr>
+<tr>
+<td><code>hark-the-herald-angels-sing-clarinet-piano.mscz</code></td>
+<td>v3 <code>.mscz</code></td>
+<td>Bb clarinet + piano (transposing instrument)</td>
+</tr>
+<tr>
+<td><code>boze-svetov-mocny-pane-jks238-andrej-radlinsky.mscz</code></td>
+<td>v3 <code>.mscz</code></td>
+<td>Choir with multi-verse lyrics, slurs, verse labels</td>
+</tr>
+</tbody>
+</table>
+<h2 id="not-yet-implemented" class="tsd-anchor-link">Not Yet Implemented<a href="#not-yet-implemented" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>The following MSCX features are not yet supported:</p>
+<ul>
+<li>Dynamics (p, f, mf, etc.) and hairpins (crescendo/decrescendo)</li>
+<li>Volta brackets (1st/2nd endings)</li>
+<li>Tuplets</li>
+<li>Grace notes</li>
+<li>Articulations (staccato, accent, fermata, etc.)</li>
+<li>Ornaments (trill, mordent, turn, etc.)</li>
+<li>Fingerings</li>
+<li>Pedal markings</li>
+<li>Page layout and system/page breaks</li>
+<li>Beam and stem direction overrides</li>
+<li>Chord symbols</li>
+<li>Coda/Segno navigation marks</li>
+</ul>
+<h2 id="dependencies" class="tsd-anchor-link">Dependencies<a href="#dependencies" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<table>
+<thead>
+<tr>
+<th>Package</th>
+<th>Version</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://github.com/opensheetmusicdisplay/opensheetmusicdisplay">opensheetmusicdisplay</a></td>
+<td>^1.9.6</td>
+<td>MusicXML rendering engine</td>
+</tr>
+<tr>
+<td><a href="https://github.com/Stuk/jszip">jszip</a></td>
+<td>^3.10.1</td>
+<td>ZIP extraction for <code>.mscz</code> files</td>
+</tr>
+</tbody>
+</table>
+<h3 id="dev-dependencies" class="tsd-anchor-link">Dev Dependencies<a href="#dev-dependencies" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<table>
+<thead>
+<tr>
+<th>Package</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>typescript</td>
+<td>TypeScript compiler</td>
+</tr>
+<tr>
+<td>ts-loader</td>
+<td>Webpack TypeScript loader</td>
+</tr>
+<tr>
+<td>webpack, webpack-cli</td>
+<td>Module bundler</td>
+</tr>
+<tr>
+<td>webpack-dev-server</td>
+<td>Development server with HMR</td>
+</tr>
+<tr>
+<td>webpack-merge</td>
+<td>Webpack config composition</td>
+</tr>
+<tr>
+<td>html-webpack-plugin</td>
+<td>HTML template processing</td>
+</tr>
+</tbody>
+</table>
+<h2 id="project-structure" class="tsd-anchor-link">Project Structure<a href="#project-structure" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<pre><code><span class="hl-10">musescore</span><span class="hl-1">-</span><span class="hl-10">display</span><span class="hl-1">/</span><br/><span class="hl-1">  </span><span class="hl-10">src</span><span class="hl-1">/                  # </span><span class="hl-10">Library</span><span class="hl-1"> </span><span class="hl-10">source</span><br/><span class="hl-1">    </span><span class="hl-10">index</span><span class="hl-1">.</span><span class="hl-10">ts</span><span class="hl-1">            # </span><span class="hl-10">Public</span><span class="hl-1"> </span><span class="hl-14">exports</span><br/><span class="hl-1">    </span><span class="hl-10">MuseScoreDisplay</span><span class="hl-1">.</span><span class="hl-10">ts</span><span class="hl-1"> # </span><span class="hl-10">Main</span><span class="hl-1"> </span><span class="hl-9">API</span><span class="hl-1"> </span><span class="hl-8">class</span><br/><span class="hl-1">    </span><span class="hl-14">MsczReader</span><span class="hl-1">.</span><span class="hl-14">ts</span><span class="hl-1">       # </span><span class="hl-14">ZIP</span><span class="hl-1">/</span><span class="hl-14">XML</span><span class="hl-1"> </span><span class="hl-14">reader</span><br/><span class="hl-1">    </span><span class="hl-14">MscxParser</span><span class="hl-1">.</span><span class="hl-14">ts</span><span class="hl-1">       # </span><span class="hl-14">MSCX</span><span class="hl-1"> -&gt; </span><span class="hl-14">IR</span><span class="hl-1"> </span><span class="hl-14">parser</span><br/><span class="hl-1">    </span><span class="hl-14">MscxToMusicXml</span><span class="hl-1">.</span><span class="hl-14">ts</span><span class="hl-1">   # </span><span class="hl-14">IR</span><span class="hl-1"> -&gt; </span><span class="hl-14">MusicXML</span><span class="hl-1"> </span><span class="hl-14">converter</span><br/><span class="hl-1">    </span><span class="hl-14">MscxTypes</span><span class="hl-1">.</span><span class="hl-14">ts</span><span class="hl-1">        # </span><span class="hl-14">IR</span><span class="hl-1"> </span><span class="hl-14">type</span><span class="hl-1"> </span><span class="hl-14">definitions</span><br/><span class="hl-1">    </span><span class="hl-14">TpcUtils</span><span class="hl-1">.</span><span class="hl-14">ts</span><span class="hl-1">         # </span><span class="hl-14">TPC</span><span class="hl-1"> </span><span class="hl-14">pitch</span><span class="hl-1"> </span><span class="hl-14">utilities</span><br/><span class="hl-1">    </span><span class="hl-14">ConvertHelpers</span><span class="hl-1">.</span><span class="hl-14">ts</span><span class="hl-1">   # </span><span class="hl-14">Lookup</span><span class="hl-1"> </span><span class="hl-14">tables</span><br/><span class="hl-1">  </span><span class="hl-14">demo</span><span class="hl-1">/                 # </span><span class="hl-14">Demo</span><span class="hl-1"> </span><span class="hl-14">application</span><br/><span class="hl-1">    </span><span class="hl-14">index</span><span class="hl-1">.</span><span class="hl-14">html</span><span class="hl-1">          # </span><span class="hl-14">HTML</span><span class="hl-1"> </span><span class="hl-14">template</span><br/><span class="hl-1">    </span><span class="hl-14">demo</span><span class="hl-1">.</span><span class="hl-14">ts</span><span class="hl-1">             # </span><span class="hl-14">Demo</span><span class="hl-1"> </span><span class="hl-14">logic</span><br/><span class="hl-1">  </span><span class="hl-14">build</span><span class="hl-1">/                # </span><span class="hl-14">Build</span><span class="hl-1"> </span><span class="hl-14">output</span><span class="hl-1"> (</span><span class="hl-14">gitignored</span><span class="hl-1">)</span><br/><span class="hl-1">  </span><span class="hl-14">webpack</span><span class="hl-1">.</span><span class="hl-14">common</span><span class="hl-1">.</span><span class="hl-14">js</span><span class="hl-1">     # </span><span class="hl-14">Shared</span><span class="hl-1"> </span><span class="hl-14">webpack</span><span class="hl-1"> </span><span class="hl-14">config</span><br/><span class="hl-1">  </span><span class="hl-14">webpack</span><span class="hl-1">.</span><span class="hl-14">dev</span><span class="hl-1">.</span><span class="hl-14">js</span><span class="hl-1">        # </span><span class="hl-14">Dev</span><span class="hl-1"> </span><span class="hl-14">server</span><span class="hl-1"> </span><span class="hl-14">config</span><span class="hl-1"> (</span><span class="hl-14">port</span><span class="hl-1"> 8001)</span><br/><span class="hl-1">  </span><span class="hl-14">webpack</span><span class="hl-1">.</span><span class="hl-14">prod</span><span class="hl-1">.</span><span class="hl-14">js</span><span class="hl-1">       # </span><span class="hl-14">Production</span><span class="hl-1"> </span><span class="hl-14">build</span><span class="hl-1"> </span><span class="hl-14">config</span><br/><span class="hl-1">  </span><span class="hl-14">tsconfig</span><span class="hl-1">.</span><span class="hl-14">json</span><span class="hl-1">         # </span><span class="hl-14">TypeScript</span><span class="hl-1"> </span><span class="hl-14">config</span><br/><span class="hl-1">  </span><span class="hl-14">package</span><span class="hl-1">.</span><span class="hl-14">json</span><span class="hl-1">          # </span><span class="hl-14">Dependencies</span><span class="hl-1"> </span><span class="hl-14">and</span><span class="hl-1"> </span><span class="hl-14">scripts</span>
+</code><button>Copy</button></pre>
+
+<h2 id="scripts" class="tsd-anchor-link">Scripts<a href="#scripts" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>npm run start</code></td>
+<td>Start dev server with HMR at localhost:8001</td>
+</tr>
+<tr>
+<td><code>npm run build</code></td>
+<td>Production build to <code>build/</code></td>
+</tr>
+<tr>
+<td><code>npm run build:dev</code></td>
+<td>Development build (with source maps)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="license" class="tsd-anchor-link">License<a href="#license" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>MIT</p>
+</div></div><div class="col-sidebar"><div class="page-menu"><div class="tsd-navigation settings"><details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-chevronDown"></use></svg><h3>Settings</h3></summary><div class="tsd-accordion-details"><div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span><ul id="tsd-filter-options"><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li></ul></div><div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div><details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-chevronDown"></use></svg><h3>On This Page</h3></summary><div class="tsd-accordion-details"><a href="#musescore-display"><span>musescore-<wbr/>display</span></a><ul><li><a href="#features"><span>Features</span></a></li><li><ul><li><a href="#notation"><span>Notation</span></a></li><li><a href="#text-and-lyrics"><span>Text and <wbr/>Lyrics</span></a></li><li><a href="#playback-interactive"><span>Playback / <wbr/>Interactive</span></a></li><li><a href="#format-support"><span>Format <wbr/>Support</span></a></li></ul></li><li><a href="#quick-start"><span>Quick <wbr/>Start</span></a></li><li><ul><li><a href="#install"><span>Install</span></a></li><li><a href="#run-the-demo"><span>Run the <wbr/>Demo</span></a></li><li><a href="#build-for-production"><span>Build for <wbr/>Production</span></a></li></ul></li><li><a href="#usage"><span>Usage</span></a></li><li><ul><li><a href="#browser-script-tag"><span>Browser (<wbr/>Script <wbr/>Tag)</span></a></li><li><a href="#es-module-typescript"><span>ES <wbr/>Module / <wbr/>Type<wbr/>Script</span></a></li><li><a href="#constructor-options"><span>Constructor <wbr/>Options</span></a></li><li><a href="#api-reference"><span>API <wbr/>Reference</span></a></li><li><a href="#lower-level-api"><span>Lower-<wbr/>Level <wbr/>API</span></a></li><li><ul><li><a href="#tpc-utilities"><span>TPC <wbr/>Utilities</span></a></li></ul></li></ul></li><li><a href="#architecture"><span>Architecture</span></a></li><li><ul><li><a href="#key-source-files"><span>Key <wbr/>Source <wbr/>Files</span></a></li></ul></li><li><a href="#demo-page"><span>Demo <wbr/>Page</span></a></li><li><ul><li><a href="#controls"><span>Controls</span></a></li><li><a href="#url-parameters"><span>URL <wbr/>Parameters</span></a></li><li><a href="#debugging"><span>Debugging</span></a></li></ul></li><li><a href="#test-scores"><span>Test <wbr/>Scores</span></a></li><li><a href="#not-yet-implemented"><span>Not <wbr/>Yet <wbr/>Implemented</span></a></li><li><a href="#dependencies"><span>Dependencies</span></a></li><li><ul><li><a href="#dev-dependencies"><span>Dev <wbr/>Dependencies</span></a></li></ul></li><li><a href="#project-structure"><span>Project <wbr/>Structure</span></a></li><li><a href="#scripts"><span>Scripts</span></a></li><li><a href="#license"><span>License</span></a></li></ul></div></details></div><div class="site-menu"><nav class="tsd-navigation"><a href="modules.html">musescore-display</a><ul class="tsd-small-nested-navigation" id="tsd-nav-container"><li>Loading...</li></ul></nav></div></div></div><footer><p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p><p>Authors: Pavol Calfa &amp; Claude (Anthropic)</p></footer><div class="overlay"></div></body></html>
