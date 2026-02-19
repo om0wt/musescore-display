@@ -44,9 +44,18 @@ export async function readMscx(content: ArrayBuffer | string): Promise<string> {
     const containerXml = await containerFile.async("string");
     const parser = new DOMParser();
     const doc = parser.parseFromString(containerXml, "text/xml");
-    const rootfileEl = doc.getElementsByTagName("rootfile")[0];
-    if (rootfileEl) {
-      mscxPath = rootfileEl.getAttribute("full-path") || undefined;
+    const rootfileEls = doc.getElementsByTagName("rootfile");
+    // MuseScore 4 lists multiple rootfiles; pick the .mscx one
+    for (let i = 0; i < rootfileEls.length; i++) {
+      const fp = rootfileEls[i].getAttribute("full-path") || "";
+      if (fp.endsWith(".mscx")) {
+        mscxPath = fp;
+        break;
+      }
+    }
+    // Fallback: use the first rootfile if no .mscx found
+    if (!mscxPath && rootfileEls.length > 0) {
+      mscxPath = rootfileEls[0].getAttribute("full-path") || undefined;
     }
   }
 

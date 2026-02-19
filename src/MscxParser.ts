@@ -91,11 +91,11 @@ function parseMetadata(scoreEl: Element): { title: string; composer: string; lyr
   for (let i = 0; i < vboxes.length; i++) {
     const texts = vboxes[i].getElementsByTagName("Text");
     for (let j = 0; j < texts.length; j++) {
-      const style = childText(texts[j], "style");
+      const style = childText(texts[j], "style").toLowerCase();
       const text = childText(texts[j], "text");
-      if (style === "Title" && text) title = text;
-      if (style === "Composer" && text) composer = text;
-      if (style === "Lyricist" && text) lyricist = text;
+      if (style === "title" && text) title = text;
+      if (style === "composer" && text) composer = text;
+      if (style === "lyricist" && text) lyricist = text;
     }
   }
 
@@ -108,10 +108,20 @@ function parseParts(scoreEl: Element): MscxPart[] {
 
   for (const partEl of partEls) {
     const staffIds: string[] = [];
+    // v2/v3: <Part><Staff id="1"> — id on Staff element
+    // v4: <Part id="1"><Staff> — id on Part element
+    const partId = partEl.getAttribute("id");
     const staffEls = directChildren(partEl, "Staff");
-    for (const staffEl of staffEls) {
-      const id = staffEl.getAttribute("id");
-      if (id) staffIds.push(id);
+    if (partId && staffEls.length > 0 && !staffEls[0].getAttribute("id")) {
+      // v4 format: assign sequential IDs starting from partId
+      for (let si = 0; si < staffEls.length; si++) {
+        staffIds.push(String(parseInt(partId) + si));
+      }
+    } else {
+      for (const staffEl of staffEls) {
+        const id = staffEl.getAttribute("id");
+        if (id) staffIds.push(id);
+      }
     }
 
     const trackName = childText(partEl, "trackName");
