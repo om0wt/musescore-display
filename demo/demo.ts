@@ -367,6 +367,7 @@ btnClear.addEventListener("click", () => {
   originalKeyBadge.textContent = "--";
   backendSelect.value = "svg";
   pageFormatSelect.value = "Endless";
+  applyPageWidth("Endless");
   btnDarkMode.textContent = "Dark Mode";
   btnDarkMode.classList.remove("active");
   scoreContainer.style.background = "white";
@@ -419,10 +420,32 @@ backendSelect.addEventListener("change", async () => {
 });
 
 // --- Page format ---
+// Map page format → max-width in px (approx 4px per mm)
+const PAGE_WIDTH_PX: Record<string, number | undefined> = {
+  "Endless": undefined,
+  "A4_P": 840,
+  "A4_L": 1188,
+  "Letter_P": 864,
+  "Letter_L": 1118,
+};
+
+function applyPageWidth(format: string): void {
+  const maxW = PAGE_WIDTH_PX[format];
+  if (maxW) {
+    scoreContainer.style.maxWidth = maxW + "px";
+    scoreContainer.style.margin = "0 auto";
+  } else {
+    scoreContainer.style.maxWidth = "";
+    scoreContainer.style.margin = "";
+  }
+}
+
 pageFormatSelect.addEventListener("change", async () => {
   const format = pageFormatSelect.value;
   setStatus(`Switching to ${format} page format...`, "loading");
   try {
+    applyPageWidth(format);
+    void scoreContainer.offsetWidth; // force browser reflow before OSMD reads container width
     await display.setPageFormat(format);
     setStatus(`Page format: ${format} — ${currentFile}`, "success");
   } catch (err) {

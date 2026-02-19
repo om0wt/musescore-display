@@ -264,7 +264,7 @@ export class MuseScoreDisplay {
 
   /** Set page format and re-render. Format examples: "Endless", "A4_P", "A4_L", "Letter_P", "Letter_L". */
   async setPageFormat(format: string): Promise<void> {
-    this.osmd.setOptions({ pageFormat: format });
+    this.osmd.setPageFormat(format);
     if (this._lastMusicXml) {
       await this.osmd.load(this._lastMusicXml);
       this.osmd.render();
