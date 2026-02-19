@@ -326,7 +326,7 @@
     <!-- Sample select -->
     <div class="toolbar-group">
       <div class="select-wrapper">
-        <select id="sample-select">
+        <select id="sample-select" title="Choose a built-in sample score to load">
           <option value="">-- Select a sample --</option>
         </select>
       </div>
@@ -336,7 +336,7 @@
 
     <!-- File picker -->
     <div class="toolbar-group">
-      <button class="btn" id="open-file-btn">Open File...</button>
+      <button class="btn" id="open-file-btn" title="Open a .mscz or .mscx file from your computer">Open File...</button>
       <input type="file" id="file-input" accept=".mscz,.mscx">
     </div>
 
@@ -370,7 +370,7 @@
     <div class="toolbar-group">
       <span class="transpose-label">Renderer:</span>
       <div class="select-wrapper select-wrapper-sm">
-        <select id="backend-select" disabled>
+        <select id="backend-select" disabled title="Choose rendering backend (SVG or Canvas)">
           <option value="svg" selected>SVG</option>
           <option value="canvas">Canvas</option>
         </select>
@@ -421,7 +421,7 @@
     <div class="toolbar-group">
       <span class="transpose-label">Page:</span>
       <div class="select-wrapper select-wrapper-sm">
-        <select id="page-format-select" disabled>
+        <select id="page-format-select" disabled title="Choose page layout format">
           <option value="Endless" selected>Endless</option>
           <option value="A4_P">A4 Portrait</option>
           <option value="A4_L">A4 Landscape</option>
