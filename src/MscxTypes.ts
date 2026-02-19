@@ -65,6 +65,12 @@ export interface MscxChord {
   ornaments?: string[];
   /** Articulation subtypes, e.g. ["articStaccatoBelow", "fermataAbove"] */
   articulations?: string[];
+  /** Grace note type (chord is a grace note preceding a main chord). */
+  graceType?: "appoggiatura" | "acciaccatura" | "grace16" | "grace32";
+  /** Arpeggio subtype: 0=neutral, 1=up, 2=down */
+  arpeggio?: number;
+  /** Voice-level fermata (v4 format): "fermataAbove" or "fermataBelow" */
+  fermata?: string;
 }
 
 export interface MscxNote {
@@ -74,6 +80,7 @@ export interface MscxNote {
   tieStart: boolean;
   tieEnd: boolean;
   accidental?: string;   // MSCX accidental subtype
+  fingering?: string;    // e.g. "2"
 }
 
 export interface MscxRest {

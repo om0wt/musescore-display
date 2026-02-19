@@ -323,6 +323,14 @@ function parseV2Measure(measureEl: Element): {
         }
         break;
       }
+      case "Fermata": {
+        // v2/v4: Fermata as sibling of Chord — attach to last chord
+        const lastChord = lastChordByVoice.get(currentVoice);
+        if (lastChord) {
+          lastChord.fermata = childText(child, "subtype") || "fermataAbove";
+        }
+        break;
+      }
     }
   }
 
@@ -369,6 +377,11 @@ function parseVoiceElements(container: Element): MscxElement[] {
           if (!lastChord.verseLabels) lastChord.verseLabels = [];
           lastChord.verseLabels.push(label);
         }
+      }
+    } else if (child.tagName === "Fermata") {
+      // v3/v4: Fermata as voice-level sibling of Chord — attach to preceding chord
+      if (lastChord) {
+        lastChord.fermata = childText(child, "subtype") || "fermataAbove";
       }
     }
   }
@@ -432,6 +445,20 @@ function parseChord(chordEl: Element): MscxChord {
     }
   }
 
+  // Grace notes
+  let graceType: MscxChord["graceType"];
+  if (directChildren(chordEl, "appoggiatura").length > 0) graceType = "appoggiatura";
+  else if (directChildren(chordEl, "acciaccatura").length > 0) graceType = "acciaccatura";
+  else if (directChildren(chordEl, "grace16").length > 0) graceType = "grace16";
+  else if (directChildren(chordEl, "grace32").length > 0) graceType = "grace32";
+
+  // Arpeggio
+  let arpeggio: number | undefined;
+  const arpeggioEl = directChildren(chordEl, "Arpeggio")[0];
+  if (arpeggioEl) {
+    arpeggio = parseInt(childText(arpeggioEl, "subtype")) || 0;
+  }
+
   // Ornaments and articulations
   const ornaments: string[] = [];
   const articulations: string[] = [];
@@ -456,6 +483,8 @@ function parseChord(chordEl: Element): MscxChord {
     slurStops: slurStops.length > 0 ? slurStops : undefined,
     ornaments: ornaments.length > 0 ? ornaments : undefined,
     articulations: articulations.length > 0 ? articulations : undefined,
+    graceType,
+    arpeggio,
   };
 }
 
@@ -508,7 +537,11 @@ function parseNote(noteEl: Element): MscxNote {
     accidental = childText(accEl, "subtype") || childText(accEl, "name") || undefined;
   }
 
-  return { pitch, tpc, tpc2, tieStart, tieEnd, accidental };
+  // Fingering
+  const fingeringEl = directChildren(noteEl, "Fingering")[0];
+  const fingering = fingeringEl ? childText(fingeringEl, "text") || undefined : undefined;
+
+  return { pitch, tpc, tpc2, tieStart, tieEnd, accidental, fingering };
 }
 
 function parseRest(restEl: Element): MscxRest {

@@ -302,7 +302,7 @@ function computeBeamGroups(elements: MscxElement[]): Map<number, string> {
 
   for (let i = 0; i <= elements.length; i++) {
     const elem = i < elements.length ? elements[i] : null;
-    const isBeamable = elem !== null && elem.type === "chord" && BEAMABLE.has(elem.durationType);
+    const isBeamable = elem !== null && elem.type === "chord" && BEAMABLE.has(elem.durationType) && !elem.graceType;
 
     if (isBeamable) {
       groupIndices.push(i);
@@ -352,9 +352,20 @@ function emitChord(
   const duration = calcDuration(chord.durationType, chord.dots);
   const xmlType = DURATION_MAP[chord.durationType]?.xmlType ?? "quarter";
 
+  const isGrace = !!chord.graceType;
+
   for (let n = 0; n < chord.notes.length; n++) {
     const note = chord.notes[n];
     const noteEl = appendElement(doc, measureEl, "note");
+
+    // Grace note element (before chord/pitch)
+    if (isGrace && n === 0) {
+      const graceEl = appendElement(doc, noteEl, "grace");
+      // Acciaccatura and grace16/grace32 get slash="yes"
+      if (chord.graceType !== "appoggiatura") {
+        graceEl.setAttribute("slash", "yes");
+      }
+    }
 
     // Subsequent notes in a chord get <chord/>
     if (n > 0) {
@@ -376,8 +387,10 @@ function emitChord(
     }
     appendTextElement(doc, pitchEl, "octave", String(octave));
 
-    // Duration
-    appendTextElement(doc, noteEl, "duration", String(duration));
+    // Duration (skip for grace notes)
+    if (!isGrace) {
+      appendTextElement(doc, noteEl, "duration", String(duration));
+    }
 
     // Tie
     if (note.tieStart) {
@@ -418,17 +431,20 @@ function emitChord(
       appendTextElement(doc, noteEl, "staff", String(staffNum));
     }
 
-    // Beam
-    if (beamStatus) {
+    // Beam (not for grace notes)
+    if (beamStatus && !isGrace) {
       appendTextElement(doc, noteEl, "beam", beamStatus).setAttribute("number", "1");
     }
 
-    // Notations (tied, slurs, ornaments, articulations, technical, fermata)
+    // Notations (tied, slurs, ornaments, articulations, technical, fermata, arpeggio, fingering)
     const hasTie = note.tieStart || note.tieEnd;
     const hasSlur = n === 0 && ((chord.slurStarts && chord.slurStarts.length > 0) || (chord.slurStops && chord.slurStops.length > 0));
     const hasOrnaments = n === 0 && chord.ornaments && chord.ornaments.length > 0;
     const hasArticulations = n === 0 && chord.articulations && chord.articulations.length > 0;
-    if (hasTie || hasSlur || hasOrnaments || hasArticulations) {
+    const hasArpeggio = chord.arpeggio !== undefined;
+    const hasFermata = n === 0 && !!chord.fermata;
+    const hasFingering = !!note.fingering;
+    if (hasTie || hasSlur || hasOrnaments || hasArticulations || hasArpeggio || hasFermata || hasFingering) {
       const notations = appendElement(doc, noteEl, "notations");
       if (note.tieEnd) {
         const tied = appendElement(doc, notations, "tied");
@@ -509,6 +525,32 @@ function emitChord(
           const fermEl = appendElement(doc, notations, f.xmlElement);
           fermEl.setAttribute("type", f.fermataType);
         }
+
+        // Voice-level fermata (v4 format — not inside <Articulation>)
+        if (hasFermata) {
+          const mapping = NOTATION_MAP[chord.fermata!];
+          if (mapping && mapping.category === "fermata") {
+            const fermEl = appendElement(doc, notations, mapping.xmlElement);
+            fermEl.setAttribute("type", mapping.fermataType!);
+          } else {
+            // Fallback: treat as upright fermata
+            const fermEl = appendElement(doc, notations, "fermata");
+            fermEl.setAttribute("type", "upright");
+          }
+        }
+      }
+
+      // Arpeggio (on every note of the chord)
+      if (hasArpeggio) {
+        const arpEl = appendElement(doc, notations, "arpeggiate");
+        if (chord.arpeggio === 1) arpEl.setAttribute("direction", "up");
+        else if (chord.arpeggio === 2) arpEl.setAttribute("direction", "down");
+      }
+
+      // Fingering
+      if (hasFingering) {
+        const techWrap = appendElement(doc, notations, "technical");
+        appendTextElement(doc, techWrap, "fingering", note.fingering!);
       }
     }
 
