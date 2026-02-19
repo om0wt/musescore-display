@@ -65,8 +65,8 @@ const btnDownloadXml = document.getElementById("btn-download-xml") as HTMLButton
 const btnClear = document.getElementById("btn-clear") as HTMLButtonElement;
 const cursorPrevBtn = document.getElementById("cursor-prev") as HTMLButtonElement;
 const cursorNextBtn = document.getElementById("cursor-next") as HTMLButtonElement;
-const cursorShowBtn = document.getElementById("cursor-show") as HTMLButtonElement;
-const cursorHideBtn = document.getElementById("cursor-hide") as HTMLButtonElement;
+const cursorToggleBtn = document.getElementById("cursor-toggle") as HTMLButtonElement;
+let cursorVisible = false;
 const cursorResetBtn = document.getElementById("cursor-reset") as HTMLButtonElement;
 const followCursorCheckbox = document.getElementById("follow-cursor") as HTMLInputElement;
 const backendSelect = document.getElementById("backend-select") as HTMLSelectElement;
@@ -143,8 +143,7 @@ function enableActions() {
   btnTranspose.disabled = false;
   cursorPrevBtn.disabled = false;
   cursorNextBtn.disabled = false;
-  cursorShowBtn.disabled = false;
-  cursorHideBtn.disabled = false;
+  cursorToggleBtn.disabled = false;
   cursorResetBtn.disabled = false;
   backendSelect.disabled = false;
   pageFormatSelect.disabled = false;
@@ -160,8 +159,9 @@ function disableActions() {
   keySelect.disabled = true;
   cursorPrevBtn.disabled = true;
   cursorNextBtn.disabled = true;
-  cursorShowBtn.disabled = true;
-  cursorHideBtn.disabled = true;
+  cursorToggleBtn.disabled = true;
+  cursorVisible = false;
+  cursorToggleBtn.textContent = "Show Cursor";
   cursorResetBtn.disabled = true;
   backendSelect.disabled = true;
   pageFormatSelect.disabled = true;
@@ -377,12 +377,15 @@ btnClear.addEventListener("click", () => {
 });
 
 // --- Cursor controls ---
-cursorShowBtn.addEventListener("click", () => {
-  display.showCursor();
-});
-
-cursorHideBtn.addEventListener("click", () => {
-  display.hideCursor();
+cursorToggleBtn.addEventListener("click", () => {
+  cursorVisible = !cursorVisible;
+  if (cursorVisible) {
+    display.showCursor();
+    cursorToggleBtn.textContent = "Hide Cursor";
+  } else {
+    display.hideCursor();
+    cursorToggleBtn.textContent = "Show Cursor";
+  }
 });
 
 cursorNextBtn.addEventListener("click", () => {

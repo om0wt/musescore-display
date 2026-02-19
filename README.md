@@ -1,5 +1,7 @@
 # musescore-display
 
+**[Live Demo](https://om0wt.github.io/musescore-display/)**
+
 A TypeScript library that renders MuseScore `.mscz` and `.mscx` files directly in the browser.
 
 It parses the native MuseScore XML format, converts it to MusicXML, and renders it using [OpenSheetMusicDisplay (OSMD)](https://opensheetmusicdisplay.org/).
