@@ -61,6 +61,10 @@ export interface MscxChord {
   slurStarts?: number[];
   /** Slur ends on this chord (slur number for MusicXML). */
   slurStops?: number[];
+  /** Ornament subtypes, e.g. ["ornamentTrill"] */
+  ornaments?: string[];
+  /** Articulation subtypes, e.g. ["articStaccatoBelow", "fermataAbove"] */
+  articulations?: string[];
 }
 
 export interface MscxNote {

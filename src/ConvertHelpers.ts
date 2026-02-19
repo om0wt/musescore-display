@@ -87,6 +87,49 @@ export const ACCIDENTAL_MAP: Record<string, string> = {
 };
 
 /**
+ * Ornament/articulation mapping: MSCX subtype → { category, xmlElement }.
+ * Categories: "ornaments", "articulations", "technical", "fermata".
+ */
+export interface NotationMapping {
+  category: "ornaments" | "articulations" | "technical" | "fermata";
+  xmlElement: string;
+  /** For fermata: "upright" or "inverted" */
+  fermataType?: string;
+}
+
+export const NOTATION_MAP: Record<string, NotationMapping> = {
+  // Ornaments
+  "ornamentTrill":          { category: "ornaments", xmlElement: "trill-mark" },
+  "ornamentTurn":           { category: "ornaments", xmlElement: "turn" },
+  "ornamentTurnInverted":   { category: "ornaments", xmlElement: "inverted-turn" },
+  "ornamentShortTrill":     { category: "ornaments", xmlElement: "inverted-mordent" },
+  "ornamentMordent":        { category: "ornaments", xmlElement: "mordent" },
+
+  // Articulations (Above/Below variants map to the same element)
+  "articStaccatoAbove":       { category: "articulations", xmlElement: "staccato" },
+  "articStaccatoBelow":       { category: "articulations", xmlElement: "staccato" },
+  "articStaccatissimoAbove":  { category: "articulations", xmlElement: "staccatissimo" },
+  "articStaccatissimoBelow":  { category: "articulations", xmlElement: "staccatissimo" },
+  "articTenutoAbove":         { category: "articulations", xmlElement: "tenuto" },
+  "articTenutoBelow":         { category: "articulations", xmlElement: "tenuto" },
+  "articAccentAbove":         { category: "articulations", xmlElement: "accent" },
+  "articAccentBelow":         { category: "articulations", xmlElement: "accent" },
+  "articMarcatoAbove":        { category: "articulations", xmlElement: "strong-accent" },
+  "articMarcatoBelow":        { category: "articulations", xmlElement: "strong-accent" },
+
+  // Technical
+  "stringsUpBow":                 { category: "technical", xmlElement: "up-bow" },
+  "stringsDownBow":               { category: "technical", xmlElement: "down-bow" },
+  "brassMuteClosed":              { category: "technical", xmlElement: "stopped" },
+  "pluckedSnapPizzicatoAbove":    { category: "technical", xmlElement: "snap-pizzicato" },
+  "pluckedSnapPizzicatoBelow":    { category: "technical", xmlElement: "snap-pizzicato" },
+
+  // Fermata
+  "fermataAbove":  { category: "fermata", xmlElement: "fermata", fermataType: "upright" },
+  "fermataBelow":  { category: "fermata", xmlElement: "fermata", fermataType: "inverted" },
+};
+
+/**
  * Get the default clef info for a clef name, with fallback to treble.
  */
 export function getClefInfo(clefName: string): ClefInfo {

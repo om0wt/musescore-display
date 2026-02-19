@@ -432,12 +432,30 @@ function parseChord(chordEl: Element): MscxChord {
     }
   }
 
+  // Ornaments and articulations
+  const ornaments: string[] = [];
+  const articulations: string[] = [];
+
+  const ornamentEls = directChildren(chordEl, "Ornament");
+  for (const el of ornamentEls) {
+    const sub = childText(el, "subtype");
+    if (sub) ornaments.push(sub);
+  }
+
+  const articulationEls = directChildren(chordEl, "Articulation");
+  for (const el of articulationEls) {
+    const sub = childText(el, "subtype");
+    if (sub) articulations.push(sub);
+  }
+
   return {
     type: "chord", durationType, dots, notes,
     lyrics: lyrics.length > 0 ? lyrics : undefined,
     verseLabels: labels.length > 0 ? labels : undefined,
     slurStarts: slurStarts.length > 0 ? slurStarts : undefined,
     slurStops: slurStops.length > 0 ? slurStops : undefined,
+    ornaments: ornaments.length > 0 ? ornaments : undefined,
+    articulations: articulations.length > 0 ? articulations : undefined,
   };
 }
 

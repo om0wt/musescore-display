@@ -6,7 +6,7 @@
 
 import { MscxScore, MscxPart, MscxMeasure, MscxVoice, MscxChord, MscxRest, MscxElement } from "./MscxTypes";
 import { tpcToPitch } from "./TpcUtils";
-import { DURATION_MAP, calcDuration, getClefInfo, getAccidentalName } from "./ConvertHelpers";
+import { DURATION_MAP, calcDuration, getClefInfo, getAccidentalName, NOTATION_MAP } from "./ConvertHelpers";
 
 /**
  * Convert a parsed MscxScore to a MusicXML string.
@@ -423,10 +423,12 @@ function emitChord(
       appendTextElement(doc, noteEl, "beam", beamStatus).setAttribute("number", "1");
     }
 
-    // Notations (tied + slurs)
+    // Notations (tied, slurs, ornaments, articulations, technical, fermata)
     const hasTie = note.tieStart || note.tieEnd;
     const hasSlur = n === 0 && ((chord.slurStarts && chord.slurStarts.length > 0) || (chord.slurStops && chord.slurStops.length > 0));
-    if (hasTie || hasSlur) {
+    const hasOrnaments = n === 0 && chord.ornaments && chord.ornaments.length > 0;
+    const hasArticulations = n === 0 && chord.articulations && chord.articulations.length > 0;
+    if (hasTie || hasSlur || hasOrnaments || hasArticulations) {
       const notations = appendElement(doc, noteEl, "notations");
       if (note.tieEnd) {
         const tied = appendElement(doc, notations, "tied");
@@ -451,6 +453,61 @@ function emitChord(
             slur.setAttribute("number", String(num));
             slur.setAttribute("type", "start");
           }
+        }
+      }
+      // Ornaments, articulations, technical, fermata (only on first note)
+      if (n === 0) {
+        // Collect all subtypes from both ornaments and articulations arrays
+        const allSubtypes: string[] = [
+          ...(chord.ornaments || []),
+          ...(chord.articulations || []),
+        ];
+
+        const ornamentXmls: string[] = [];
+        const articulationXmls: string[] = [];
+        const technicalXmls: string[] = [];
+        const fermatas: { xmlElement: string; fermataType: string }[] = [];
+
+        for (const sub of allSubtypes) {
+          const mapping = NOTATION_MAP[sub];
+          if (!mapping) continue;
+          switch (mapping.category) {
+            case "ornaments":
+              ornamentXmls.push(mapping.xmlElement);
+              break;
+            case "articulations":
+              articulationXmls.push(mapping.xmlElement);
+              break;
+            case "technical":
+              technicalXmls.push(mapping.xmlElement);
+              break;
+            case "fermata":
+              fermatas.push({ xmlElement: mapping.xmlElement, fermataType: mapping.fermataType! });
+              break;
+          }
+        }
+
+        if (ornamentXmls.length > 0) {
+          const ornWrap = appendElement(doc, notations, "ornaments");
+          for (const xmlEl of ornamentXmls) {
+            appendElement(doc, ornWrap, xmlEl);
+          }
+        }
+        if (articulationXmls.length > 0) {
+          const artWrap = appendElement(doc, notations, "articulations");
+          for (const xmlEl of articulationXmls) {
+            appendElement(doc, artWrap, xmlEl);
+          }
+        }
+        if (technicalXmls.length > 0) {
+          const techWrap = appendElement(doc, notations, "technical");
+          for (const xmlEl of technicalXmls) {
+            appendElement(doc, techWrap, xmlEl);
+          }
+        }
+        for (const f of fermatas) {
+          const fermEl = appendElement(doc, notations, f.xmlElement);
+          fermEl.setAttribute("type", f.fermataType);
         }
       }
     }
