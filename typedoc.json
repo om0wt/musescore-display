@@ -1,0 +1,10 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["src/index.ts"],
+  "out": "docs",
+  "name": "musescore-display",
+  "excludePrivate": true,
+  "excludeInternal": true,
+  "excludeExternals": true,
+  "customFooterHtml": "Authors: Pavol Calfa &amp; Claude (Anthropic)"
+}
