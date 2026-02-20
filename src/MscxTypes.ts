@@ -39,12 +39,27 @@ export interface MscxMeasure {
   startRepeat?: boolean;
   endRepeat?: number;    // repeat count (e.g. 2)
   endBarline?: string;   // "double", "end", "repeat", etc.
-  /** Tempo in BPM (quarter note = X), from <Tempo> element */
-  tempo?: number;
+  /** Tempo marking from <Tempo> element */
+  tempo?: MscxTempo;
+}
+
+export interface MscxTempo {
+  /** Quarter-note BPM for playback (<sound> element) */
+  bpm: number;
+  /** Tempo text label (e.g. "Andante"), empty if metronome-only */
+  text: string;
+  /** Beat unit for display: "quarter", "eighth", "half", etc. */
+  beatUnit: string;
+  /** Whether beat unit is dotted */
+  beatUnitDot: boolean;
+  /** Per-minute value as displayed (e.g. 54 for dotted-quarter = 54) */
+  perMinute: number;
 }
 
 export interface MscxVoice {
   elements: MscxElement[];
+  /** Tick offset at the start of this voice (from v3 <location> element) */
+  startOffset?: number;
 }
 
 export type MscxElement = MscxChord | MscxRest;
@@ -71,6 +86,14 @@ export interface MscxChord {
   arpeggio?: number;
   /** Voice-level fermata (v4 format): "fermataAbove" or "fermataBelow" */
   fermata?: string;
+  /** Dynamic marking before this chord (e.g. "p", "mf", "sf") */
+  dynamic?: { subtype: string; velocity?: number };
+  /** Hairpin (wedge) starts on this chord. subtype: 0=crescendo, 1=decrescendo */
+  hairpinStarts?: { number: number; subtype: number }[];
+  /** Hairpin (wedge) stops on this chord */
+  hairpinStops?: number[];
+  /** Expression/staff text marking (e.g. "rit.", "a tempo", "grazioso") */
+  expressionText?: string;
 }
 
 export interface MscxNote {

@@ -4,7 +4,7 @@
 
 import {
   MscxScore, MscxPart, MscxInstrument, MscxMeasure, MscxVoice,
-  MscxElement, MscxChord, MscxNote, MscxRest, MscxLyric,
+  MscxElement, MscxChord, MscxNote, MscxRest, MscxLyric, MscxTempo,
 } from "./MscxTypes";
 
 /** Get text content of first matching child element, or empty string. */
@@ -37,6 +37,9 @@ function getSlurNumber(slurId: string): number {
 
 // For v3 spanners: auto-increment counter since they don't have explicit IDs
 let v3SlurCounter: number;
+let v3HairpinCounter: number;
+// Division (ticks per quarter note) for the current parse, used by sub-parsers
+let parseDivision: number;
 
 /** Parse the MSCX XML string into the IR. */
 export function parseMscx(xmlString: string): MscxScore {
@@ -47,6 +50,8 @@ export function parseMscx(xmlString: string): MscxScore {
   slurIdMap = new Map();
   nextSlurNum = 1;
   v3SlurCounter = 1;
+  v3HairpinCounter = 1;
+  parseDivision = 480; // default, overridden below
 
   const museScoreEl = doc.documentElement;
   const version = parseFloat(museScoreEl.getAttribute("version") || "2.0");
@@ -58,6 +63,7 @@ export function parseMscx(xmlString: string): MscxScore {
   }
 
   const division = parseInt(childText(scoreEl, "Division")) || 480;
+  parseDivision = division;
 
   // Parse metadata
   const { title, composer, lyricist } = parseMetadata(scoreEl);
@@ -222,12 +228,11 @@ function parseMeasure(measureEl: Element, defaultNumber: number, isV3: boolean):
     if (sub) endBarline = sub;
   }
 
-  // Tempo (BPM)
-  let tempo: number | undefined;
+  // Tempo
+  let tempo: MscxTempo | undefined;
   const tempoEls = measureEl.getElementsByTagName("Tempo");
   if (tempoEls.length > 0) {
-    const bps = parseFloat(childText(tempoEls[0], "tempo"));
-    if (bps > 0) tempo = Math.round(bps * 60); // beats per second → BPM
+    tempo = parseTempo(tempoEls[0]);
   }
 
   return { number, keySig, timeSig, clef, voices, startRepeat, endRepeat, endBarline, tempo };
@@ -239,9 +244,27 @@ function parseV3Voices(measureEl: Element): MscxVoice[] {
   const voiceEls = directChildren(measureEl, "voice");
 
   for (const voiceEl of voiceEls) {
+    // Check for <location> at the start of the voice (offset positioning)
+    let startOffset: number | undefined;
+    const firstChild = voiceEl.children[0];
+    if (firstChild && firstChild.tagName === "location") {
+      const fractions = childText(firstChild, "fractions");
+      if (fractions) {
+        const parts = fractions.split("/");
+        if (parts.length === 2) {
+          const num = parseInt(parts[0]);
+          const den = parseInt(parts[1]);
+          if (num > 0 && den > 0) {
+            // fraction of a whole note → ticks: (num/den) * 4 * division
+            startOffset = Math.round((num / den) * 4 * parseDivision);
+          }
+        }
+      }
+    }
+
     const elements = parseVoiceElements(voiceEl);
-    if (elements.length > 0) {
-      voices.push({ elements });
+    if (elements.length > 0 || startOffset) {
+      voices.push({ elements, startOffset });
     }
   }
 
@@ -263,6 +286,10 @@ function parseV2Measure(measureEl: Element): {
   let currentVoice = 0;
   // Track the last chord per voice for attaching lyrics
   const lastChordByVoice = new Map<number, MscxChord>();
+  // Pending items that attach to the NEXT chord
+  let pendingDynamic: { subtype: string; velocity?: number } | null = null;
+  let pendingHairpinStarts: { number: number; subtype: number }[] = [];
+  let pendingExpressionText: string | null = null;
 
   for (let i = 0; i < measureEl.children.length; i++) {
     const child = measureEl.children[i];
@@ -294,6 +321,21 @@ function parseV2Measure(measureEl: Element): {
         }
         if (!voiceMap.has(currentVoice)) voiceMap.set(currentVoice, []);
         const chord = parseChord(child);
+        // Attach pending dynamic
+        if (pendingDynamic) {
+          chord.dynamic = pendingDynamic;
+          pendingDynamic = null;
+        }
+        // Attach pending hairpin starts
+        if (pendingHairpinStarts.length > 0) {
+          chord.hairpinStarts = pendingHairpinStarts;
+          pendingHairpinStarts = [];
+        }
+        // Attach pending expression text
+        if (pendingExpressionText) {
+          chord.expressionText = pendingExpressionText;
+          pendingExpressionText = null;
+        }
         voiceMap.get(currentVoice)!.push(chord);
         lastChordByVoice.set(currentVoice, chord);
         break;
@@ -331,6 +373,39 @@ function parseV2Measure(measureEl: Element): {
         }
         break;
       }
+      case "Dynamic": {
+        const subtype = childText(child, "subtype");
+        if (subtype) {
+          const velStr = childText(child, "velocity");
+          const velocity = velStr ? parseInt(velStr) : undefined;
+          pendingDynamic = { subtype, velocity };
+        }
+        break;
+      }
+      case "StaffText": {
+        const text = childText(child, "text");
+        if (text) pendingExpressionText = text;
+        break;
+      }
+      case "Spanner": {
+        if (child.getAttribute("type") === "HairPin") {
+          const hairpinEl = directChildren(child, "HairPin")[0];
+          const hasNext = directChildren(child, "next").length > 0;
+          const hasPrev = directChildren(child, "prev").length > 0;
+          if (hasNext && !hasPrev) {
+            const subtype = hairpinEl ? parseInt(childText(hairpinEl, "subtype")) || 0 : 0;
+            const num = v3HairpinCounter++;
+            pendingHairpinStarts.push({ number: num, subtype });
+          } else if (hasPrev && !hasNext) {
+            const lastChord = lastChordByVoice.get(currentVoice);
+            if (lastChord) {
+              if (!lastChord.hairpinStops) lastChord.hairpinStops = [];
+              lastChord.hairpinStops.push(v3HairpinCounter - 1);
+            }
+          }
+        }
+        break;
+      }
     }
   }
 
@@ -355,11 +430,30 @@ function parseV2Measure(measureEl: Element): {
 function parseVoiceElements(container: Element): MscxElement[] {
   const elements: MscxElement[] = [];
   let lastChord: MscxChord | null = null;
+  // Pending items that attach to the NEXT chord
+  let pendingDynamic: { subtype: string; velocity?: number } | null = null;
+  let pendingHairpinStarts: { number: number; subtype: number }[] = [];
+  let pendingExpressionText: string | null = null;
 
   for (let i = 0; i < container.children.length; i++) {
     const child = container.children[i];
     if (child.tagName === "Chord") {
       const chord = parseChord(child);
+      // Attach pending dynamic
+      if (pendingDynamic) {
+        chord.dynamic = pendingDynamic;
+        pendingDynamic = null;
+      }
+      // Attach pending hairpin starts
+      if (pendingHairpinStarts.length > 0) {
+        chord.hairpinStarts = pendingHairpinStarts;
+        pendingHairpinStarts = [];
+      }
+      // Attach pending expression text
+      if (pendingExpressionText) {
+        chord.expressionText = pendingExpressionText;
+        pendingExpressionText = null;
+      }
       elements.push(chord);
       lastChord = chord;
     } else if (child.tagName === "Rest") {
@@ -383,6 +477,32 @@ function parseVoiceElements(container: Element): MscxElement[] {
       if (lastChord) {
         lastChord.fermata = childText(child, "subtype") || "fermataAbove";
       }
+    } else if (child.tagName === "Dynamic") {
+      const subtype = childText(child, "subtype");
+      if (subtype) {
+        const velStr = childText(child, "velocity");
+        const velocity = velStr ? parseInt(velStr) : undefined;
+        pendingDynamic = { subtype, velocity };
+      }
+    } else if (child.tagName === "Spanner" && child.getAttribute("type") === "HairPin") {
+      const hairpinEl = directChildren(child, "HairPin")[0];
+      const hasNext = directChildren(child, "next").length > 0;
+      const hasPrev = directChildren(child, "prev").length > 0;
+      if (hasNext && !hasPrev) {
+        // Hairpin start — assign number, read subtype
+        const subtype = hairpinEl ? parseInt(childText(hairpinEl, "subtype")) || 0 : 0;
+        const num = v3HairpinCounter++;
+        pendingHairpinStarts.push({ number: num, subtype });
+      } else if (hasPrev && !hasNext) {
+        // Hairpin stop — attach to preceding chord
+        if (lastChord) {
+          if (!lastChord.hairpinStops) lastChord.hairpinStops = [];
+          lastChord.hairpinStops.push(v3HairpinCounter - 1);
+        }
+      }
+    } else if (child.tagName === "StaffText") {
+      const text = childText(child, "text");
+      if (text) pendingExpressionText = text;
     }
   }
 
@@ -524,11 +644,28 @@ function parseNote(noteEl: Element): MscxNote {
   const tpc2 = tpc2Str ? parseInt(tpc2Str) : undefined;
 
   // Tie detection
-  const tieEls = noteEl.getElementsByTagName("Tie");
-  const tieStart = tieEls.length > 0;
+  // v2: <Tie/> as direct child for start, <endSpanner/> for end
+  // v3: <Spanner type="Tie"><Tie/><next>...</next></Spanner> for start
+  //     <Spanner type="Tie"><prev>...</prev></Spanner> for end
+  let tieStart = false;
+  let tieEnd = false;
 
-  const spannerEls = noteEl.getElementsByTagName("endSpanner");
-  const tieEnd = spannerEls.length > 0;
+  // v2 format
+  const v2TieEls = directChildren(noteEl, "Tie");
+  if (v2TieEls.length > 0) tieStart = true;
+  const endSpannerEls = noteEl.getElementsByTagName("endSpanner");
+  if (endSpannerEls.length > 0) tieEnd = true;
+
+  // v3 format: Spanner type="Tie" with next/prev
+  const tieSpanners = directChildren(noteEl, "Spanner");
+  for (const sp of tieSpanners) {
+    if (sp.getAttribute("type") === "Tie") {
+      const hasNext = directChildren(sp, "next").length > 0;
+      const hasPrev = directChildren(sp, "prev").length > 0;
+      if (hasNext) tieStart = true;
+      if (hasPrev) tieEnd = true;
+    }
+  }
 
   // Accidental
   const accEl = noteEl.getElementsByTagName("Accidental")[0];
@@ -551,6 +688,48 @@ function parseRest(restEl: Element): MscxRest {
   const isMeasureRest = durationType === "measure";
 
   return { type: "rest", durationType, dots, isMeasureRest };
+}
+
+/** Parse a <Tempo> element into MscxTempo. */
+function parseTempo(tempoEl: Element): MscxTempo | undefined {
+  const bps = parseFloat(childText(tempoEl, "tempo"));
+  if (!(bps > 0)) return undefined;
+
+  const bpm = Math.round(bps * 60); // quarter-note BPM
+
+  // Extract text content, strip HTML/XML tags
+  const rawText = childText(tempoEl, "text");
+  const stripped = rawText.replace(/<[^>]+>/g, "");
+
+  // Extract tempo name: text before '(' or before non-ASCII chars (note symbols)
+  let text = "";
+  const parenIdx = stripped.indexOf("(");
+  if (parenIdx > 0) {
+    text = stripped.substring(0, parenIdx).trim();
+  } else {
+    // Take all ASCII alphabetic text from the start
+    const nameMatch = stripped.match(/^([A-Za-z][A-Za-z\s]*)/);
+    if (nameMatch) text = nameMatch[1].trim();
+  }
+
+  // Extract per-minute from "= NNN"
+  const pmMatch = stripped.match(/=\s*(\d+)/);
+  const perMinute = pmMatch ? parseInt(pmMatch[1]) : 0;
+
+  // Determine beat unit from ratio BPM / perMinute
+  let beatUnit = "quarter";
+  let beatUnitDot = false;
+  if (perMinute > 0) {
+    const ratio = bpm / perMinute;
+    if (Math.abs(ratio - 1.5) < 0.1) { beatUnit = "quarter"; beatUnitDot = true; }
+    else if (Math.abs(ratio - 2.0) < 0.1) { beatUnit = "half"; }
+    else if (Math.abs(ratio - 3.0) < 0.1) { beatUnit = "half"; beatUnitDot = true; }
+    else if (Math.abs(ratio - 0.5) < 0.1) { beatUnit = "eighth"; }
+    else if (Math.abs(ratio - 0.75) < 0.1) { beatUnit = "eighth"; beatUnitDot = true; }
+    // ratio ≈ 1.0 → quarter (default)
+  }
+
+  return { bpm, text, beatUnit, beatUnitDot, perMinute };
 }
 
 /** Find KeySig in measure (works for both v2 and v3). */

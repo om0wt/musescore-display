@@ -4,7 +4,7 @@
  * Builds a MusicXML score-partwise document that OSMD can render.
  */
 
-import { MscxScore, MscxPart, MscxMeasure, MscxVoice, MscxChord, MscxRest, MscxElement } from "./MscxTypes";
+import { MscxScore, MscxPart, MscxMeasure, MscxVoice, MscxChord, MscxRest, MscxElement, MscxTempo } from "./MscxTypes";
 import { tpcToPitch } from "./TpcUtils";
 import { DURATION_MAP, calcDuration, getClefInfo, getAccidentalName, NOTATION_MAP } from "./ConvertHelpers";
 
@@ -122,7 +122,7 @@ function buildPart(doc: Document, partEl: Element, part: MscxPart, score: MscxSc
     let startRepeat = false;
     let endRepeat: number | undefined;
     let endBarline: string | undefined;
-    let tempo: number | undefined;
+    let tempo: MscxTempo | undefined;
 
     for (let s = 0; s < numStaves; s++) {
       const staffMeasures = score.staffData.get(part.staffIds[s]);
@@ -217,12 +217,24 @@ function buildPart(doc: Document, partEl: Element, part: MscxPart, score: MscxSc
     if (tempo) {
       const direction = appendElement(doc, measureEl, "direction");
       direction.setAttribute("placement", "above");
-      const dirType = appendElement(doc, direction, "direction-type");
-      const metronome = appendElement(doc, dirType, "metronome");
-      appendTextElement(doc, metronome, "beat-unit", "quarter");
-      appendTextElement(doc, metronome, "per-minute", String(tempo));
+      // Tempo text label (e.g. "Andante")
+      if (tempo.text) {
+        const dtWords = appendElement(doc, direction, "direction-type");
+        const words = appendTextElement(doc, dtWords, "words", tempo.text + " ");
+        words.setAttribute("font-weight", "bold");
+        words.setAttribute("font-size", "12");
+      }
+      // Metronome mark (beat-unit = per-minute)
+      if (tempo.perMinute > 0) {
+        const dtMet = appendElement(doc, direction, "direction-type");
+        const metronome = appendElement(doc, dtMet, "metronome");
+        if (tempo.text) metronome.setAttribute("parentheses", "yes");
+        appendTextElement(doc, metronome, "beat-unit", tempo.beatUnit);
+        if (tempo.beatUnitDot) appendElement(doc, metronome, "beat-unit-dot");
+        appendTextElement(doc, metronome, "per-minute", String(tempo.perMinute));
+      }
       const sound = appendElement(doc, direction, "sound");
-      sound.setAttribute("tempo", String(tempo));
+      sound.setAttribute("tempo", String(tempo.bpm));
     }
 
     // Collect verse labels from all voices in all staves (keyed by verse number)
@@ -268,7 +280,12 @@ function buildPart(doc: Document, partEl: Element, part: MscxPart, score: MscxSc
         // When a staff has multiple voices, voice 0 = stems up, voice 1+ = stems down
         const stemDirection = multiVoice ? (v === 0 ? "up" : "down") : undefined;
 
-        emitVoiceElements(doc, measureEl, voice, voiceNum, staffNum, isMultiStaff, isTransposing, part, score.division, measureDuration, pendingLabels, stemDirection);
+        // Forward to voice start offset (v3 <location> element)
+        if (voice.startOffset && voice.startOffset > 0) {
+          emitForward(doc, measureEl, voice.startOffset);
+        }
+
+        emitVoiceElements(doc, measureEl, voice, voiceNum, staffNum, isMultiStaff, isTransposing, part, score.division, currentTimeSig, pendingLabels, stemDirection);
       }
     }
 
@@ -293,32 +310,66 @@ function buildPart(doc: Document, partEl: Element, part: MscxPart, score: MscxSc
   }
 }
 
-/** Compute beam groups for consecutive beamable notes in a voice. */
-function computeBeamGroups(elements: MscxElement[]): Map<number, string> {
+/** Compute beat-aware beam groups for a voice. Breaks beams at beat boundaries. */
+function computeBeamGroups(
+  elements: MscxElement[],
+  timeSig: { beats: number; beatType: number },
+  division: number
+): Map<number, string> {
   const beamStatus = new Map<number, string>();
   const BEAMABLE = new Set(["eighth", "16th", "32nd", "64th", "128th"]);
 
-  let groupIndices: number[] = [];
+  // Compound time (6/8, 9/8, 12/8, 3/8): beat = dotted quarter (3 eighths)
+  // Simple time: beat = quarter note
+  const isCompound = timeSig.beatType === 8 && timeSig.beats % 3 === 0;
+  const beatTicks = isCompound
+    ? Math.round(division * 3 / 2)
+    : division;
 
-  for (let i = 0; i <= elements.length; i++) {
-    const elem = i < elements.length ? elements[i] : null;
-    const isBeamable = elem !== null && elem.type === "chord" && BEAMABLE.has(elem.durationType) && !elem.graceType;
+  let currentTick = 0;
+  let groupIndices: number[] = [];
+  let groupBeat = 0;
+
+  function flushGroup() {
+    if (groupIndices.length >= 2) {
+      beamStatus.set(groupIndices[0], "begin");
+      for (let j = 1; j < groupIndices.length - 1; j++) {
+        beamStatus.set(groupIndices[j], "continue");
+      }
+      beamStatus.set(groupIndices[groupIndices.length - 1], "end");
+    }
+    groupIndices = [];
+  }
+
+  for (let i = 0; i < elements.length; i++) {
+    const elem = elements[i];
+
+    // Grace notes: skip (don't advance tick, don't participate in beaming)
+    if (elem.type === "chord" && elem.graceType) continue;
+
+    const isBeamable = elem.type === "chord" && BEAMABLE.has(elem.durationType);
 
     if (isBeamable) {
-      groupIndices.push(i);
-    } else {
-      // Flush beam group (need at least 2 notes to form a beam)
-      if (groupIndices.length >= 2) {
-        beamStatus.set(groupIndices[0], "begin");
-        for (let j = 1; j < groupIndices.length - 1; j++) {
-          beamStatus.set(groupIndices[j], "continue");
-        }
-        beamStatus.set(groupIndices[groupIndices.length - 1], "end");
+      const currentBeat = Math.floor(currentTick / beatTicks);
+      // Break beam at beat boundary
+      if (groupIndices.length > 0 && currentBeat !== groupBeat) {
+        flushGroup();
       }
-      groupIndices = [];
+      if (groupIndices.length === 0) groupBeat = Math.floor(currentTick / beatTicks);
+      groupIndices.push(i);
+      currentTick += calcDuration(elem.durationType, (elem as MscxChord).dots);
+    } else {
+      flushGroup();
+      // Advance tick for non-beamable elements
+      if (elem.type === "chord") {
+        currentTick += calcDuration(elem.durationType, elem.dots);
+      } else if (elem.type === "rest" && !elem.isMeasureRest) {
+        currentTick += calcDuration(elem.durationType, elem.dots);
+      }
     }
   }
 
+  flushGroup();
   return beamStatus;
 }
 
@@ -326,18 +377,90 @@ function emitVoiceElements(
   doc: Document, measureEl: Element, voice: MscxVoice,
   voiceNum: number, staffNum: number, isMultiStaff: boolean,
   isTransposing: boolean, part: MscxPart, division: number,
-  measureDuration: number, pendingLabels: Map<number, string>,
+  timeSig: { beats: number; beatType: number },
+  pendingLabels: Map<number, string>,
   stemDirection?: string
 ): void {
-  const beamGroups = computeBeamGroups(voice.elements);
+  const measureDuration = calcMeasureDuration(timeSig, division);
+  const beamGroups = computeBeamGroups(voice.elements, timeSig, division);
 
   for (let i = 0; i < voice.elements.length; i++) {
     const elem = voice.elements[i];
     if (elem.type === "chord") {
+      // Emit dynamic direction before the chord
+      if (elem.dynamic) {
+        emitDynamicDirection(doc, measureEl, elem.dynamic, staffNum, isMultiStaff);
+      }
+      // Emit expression text direction before the chord
+      if (elem.expressionText) {
+        emitExpressionDirection(doc, measureEl, elem.expressionText, staffNum, isMultiStaff);
+      }
+      // Emit hairpin start directions before the chord
+      if (elem.hairpinStarts) {
+        for (const hp of elem.hairpinStarts) {
+          emitWedgeDirection(doc, measureEl, hp.subtype === 0 ? "crescendo" : "diminuendo", hp.number, staffNum, isMultiStaff);
+        }
+      }
       emitChord(doc, measureEl, elem, voiceNum, staffNum, isMultiStaff, isTransposing, part, pendingLabels, beamGroups.get(i), stemDirection);
+      // Emit hairpin stop directions after the chord
+      if (elem.hairpinStops) {
+        for (const num of elem.hairpinStops) {
+          emitWedgeDirection(doc, measureEl, "stop", num, staffNum, isMultiStaff);
+        }
+      }
     } else {
       emitRest(doc, measureEl, elem, voiceNum, staffNum, isMultiStaff, division, measureDuration, stemDirection);
     }
+  }
+}
+
+function emitDynamicDirection(
+  doc: Document, measureEl: Element,
+  dynamic: { subtype: string; velocity?: number },
+  staffNum: number, isMultiStaff: boolean
+): void {
+  const direction = appendElement(doc, measureEl, "direction");
+  direction.setAttribute("placement", "below");
+  const dirType = appendElement(doc, direction, "direction-type");
+  const dynamics = appendElement(doc, dirType, "dynamics");
+  // The dynamic subtype becomes the element name (e.g. <p/>, <mf/>, <sf/>)
+  appendElement(doc, dynamics, dynamic.subtype);
+  if (isMultiStaff) {
+    appendTextElement(doc, direction, "staff", String(staffNum));
+  }
+  if (dynamic.velocity !== undefined) {
+    const sound = appendElement(doc, direction, "sound");
+    sound.setAttribute("dynamics", String(dynamic.velocity));
+  }
+}
+
+function emitWedgeDirection(
+  doc: Document, measureEl: Element,
+  wedgeType: string, number: number,
+  staffNum: number, isMultiStaff: boolean
+): void {
+  const direction = appendElement(doc, measureEl, "direction");
+  direction.setAttribute("placement", "below");
+  const dirType = appendElement(doc, direction, "direction-type");
+  const wedge = appendElement(doc, dirType, "wedge");
+  wedge.setAttribute("type", wedgeType);
+  wedge.setAttribute("number", String(number));
+  if (isMultiStaff) {
+    appendTextElement(doc, direction, "staff", String(staffNum));
+  }
+}
+
+function emitExpressionDirection(
+  doc: Document, measureEl: Element,
+  text: string, staffNum: number, isMultiStaff: boolean
+): void {
+  const direction = appendElement(doc, measureEl, "direction");
+  direction.setAttribute("placement", "below");
+  const dirType = appendElement(doc, direction, "direction-type");
+  const words = appendTextElement(doc, dirType, "words", text);
+  words.setAttribute("font-style", "italic");
+  if (isMultiStaff) {
+    appendTextElement(doc, direction, "staff", String(staffNum));
   }
 }
 
@@ -619,6 +742,11 @@ function emitRest(
 function emitBackup(doc: Document, measureEl: Element, duration: number): void {
   const backup = appendElement(doc, measureEl, "backup");
   appendTextElement(doc, backup, "duration", String(duration));
+}
+
+function emitForward(doc: Document, measureEl: Element, duration: number): void {
+  const forward = appendElement(doc, measureEl, "forward");
+  appendTextElement(doc, forward, "duration", String(duration));
 }
 
 /** Find the current time signature effective at measure index m. */
