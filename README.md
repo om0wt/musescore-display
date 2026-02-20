@@ -15,15 +15,28 @@ It parses the native MuseScore XML format, converts it to MusicXML, and renders 
 - Accidentals (sharp, flat, natural, double sharp, double flat)
 - Key signatures and time signatures
 - Clefs (treble, bass, alto, tenor) and mid-measure clef changes
-- Ties and slurs
-- Multiple voices per staff
+- Ties (v2 and v3 formats) and slurs
+- Multiple voices per staff with correct positioning (v3 `<location>` offsets)
 - Multiple staves per part (e.g., piano grand staff)
 - Multiple parts/instruments
 - Transposing instruments (written pitch via `tpc2`)
-- Beaming (explicit beam groups for eighth notes and shorter)
+- Beat-aware beaming (respects compound meters like 6/8, 9/8, 12/8)
 - Repeat barlines (forward/backward with repeat counts)
 - Double barlines and final barlines (auto-emitted on last measure)
-- Tempo markings (metronome mark + MIDI sound tempo)
+- Grace notes (appoggiatura, acciaccatura, grace16, grace32)
+- Arpeggios (neutral, up, down)
+- Articulations (staccato, accent, tenuto, marcato, etc.)
+- Ornaments (trill, mordent, turn, inverted turn, etc.)
+- Fermatas (upright, inverted; both chord-level and voice-level)
+- Fingerings
+
+### Dynamics and Expression
+
+- Dynamic markings (p, pp, mp, mf, f, ff, fp, sf, sfz, etc.)
+- Hairpins / wedges (crescendo, decrescendo)
+- Expression text (rit., a tempo, grazioso, con anima, etc.)
+- Tempo markings with text labels (e.g., "Andante (dotted-quarter = 54)")
+- Correct beat-unit and per-minute display for compound meters
 
 ### Text and Lyrics
 
@@ -211,7 +224,7 @@ The demo page (`npm run start`) provides a full-featured testing environment:
 
 ### Controls
 
-- **Sample dropdown** -- 3 included test scores covering v2/v3 formats, multi-part, lyrics, slurs
+- **Sample dropdown** -- 4 included test scores covering v2/v3 formats, multi-part, lyrics, slurs, dynamics
 - **Open File** -- file picker for any `.mscz`/`.mscx` file
 - **Drag & Drop** -- drop files anywhere on the page
 - **Zoom** -- +/- buttons, Reset button, keyboard shortcuts (`Ctrl/Cmd` + `+`/`-`/`0`)
@@ -249,23 +262,23 @@ Three test scores are included in the repository root:
 | `FileExample/Hark the Herald Angels Sing (No 209).mscx` | v2 `.mscx` | 2-staff organ arrangement |
 | `hark-the-herald-angels-sing-clarinet-piano.mscz` | v3 `.mscz` | Bb clarinet + piano (transposing instrument) |
 | `boze-svetov-mocny-pane-jks238-andrej-radlinsky.mscz` | v3 `.mscz` | Choir with multi-verse lyrics, slurs, verse labels |
+| `serenade-a-woodall.mscz` | v3 `.mscz` | Flute + piano; dynamics, hairpins, expression text, compound meter (9/8) |
 
 ## Not Yet Implemented
 
 The following MSCX features are not yet supported:
 
-- Dynamics (p, f, mf, etc.) and hairpins (crescendo/decrescendo)
 - Volta brackets (1st/2nd endings)
 - Tuplets
-- Grace notes
-- Articulations (staccato, accent, fermata, etc.)
-- Ornaments (trill, mordent, turn, etc.)
-- Fingerings
 - Pedal markings
 - Page layout and system/page breaks
-- Beam and stem direction overrides
 - Chord symbols
 - Coda/Segno navigation marks
+- Rehearsal marks
+- Multi-measure rests
+- Glissando / portamento
+- Tremolos
+- Cross-staff notation
 
 ## Dependencies
 
