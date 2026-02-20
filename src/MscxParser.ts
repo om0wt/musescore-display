@@ -5,6 +5,7 @@
 import {
   MscxScore, MscxPart, MscxInstrument, MscxMeasure, MscxVoice,
   MscxElement, MscxChord, MscxNote, MscxRest, MscxLyric, MscxTempo,
+  MscxTupletInfo,
 } from "./MscxTypes";
 
 /** Get text content of first matching child element, or empty string. */
@@ -290,6 +291,10 @@ function parseV2Measure(measureEl: Element): {
   let pendingDynamic: { subtype: string; velocity?: number } | null = null;
   let pendingHairpinStarts: { number: number; subtype: number }[] = [];
   let pendingExpressionText: string | null = null;
+  // Tuplet tracking
+  let tupletActual = 0;
+  let tupletNormal = 0;
+  let tupletCount = 0;
 
   for (let i = 0; i < measureEl.children.length; i++) {
     const child = measureEl.children[i];
@@ -314,6 +319,24 @@ function parseV2Measure(measureEl: Element): {
         currentVoice++;
         break;
       }
+      case "Tuplet": {
+        tupletActual = parseInt(childText(child, "actualNotes")) || 3;
+        tupletNormal = parseInt(childText(child, "normalNotes")) || 2;
+        tupletCount = 0;
+        break;
+      }
+      case "endTuplet": {
+        // Mark the last element in current voice as tuplet stop
+        const voiceElems = voiceMap.get(currentVoice);
+        if (voiceElems && voiceElems.length > 0) {
+          const last = voiceElems[voiceElems.length - 1];
+          if (last.tuplet) last.tuplet.isStop = true;
+        }
+        tupletActual = 0;
+        tupletNormal = 0;
+        tupletCount = 0;
+        break;
+      }
       case "Chord": {
         const track = child.getAttribute("track") ?? childText(child, "track");
         if (track) {
@@ -321,6 +344,16 @@ function parseV2Measure(measureEl: Element): {
         }
         if (!voiceMap.has(currentVoice)) voiceMap.set(currentVoice, []);
         const chord = parseChord(child);
+        // Attach tuplet info
+        if (tupletActual > 0) {
+          chord.tuplet = {
+            actualNotes: tupletActual,
+            normalNotes: tupletNormal,
+            isStart: tupletCount === 0,
+            isStop: false,
+          };
+          tupletCount++;
+        }
         // Attach pending dynamic
         if (pendingDynamic) {
           chord.dynamic = pendingDynamic;
@@ -346,7 +379,18 @@ function parseV2Measure(measureEl: Element): {
           currentVoice = parseInt(track) % 4;
         }
         if (!voiceMap.has(currentVoice)) voiceMap.set(currentVoice, []);
-        voiceMap.get(currentVoice)!.push(parseRest(child));
+        const rest = parseRest(child);
+        // Attach tuplet info to rests too
+        if (tupletActual > 0) {
+          rest.tuplet = {
+            actualNotes: tupletActual,
+            normalNotes: tupletNormal,
+            isStart: tupletCount === 0,
+            isStop: false,
+          };
+          tupletCount++;
+        }
+        voiceMap.get(currentVoice)!.push(rest);
         break;
       }
       case "Lyrics": {
@@ -434,11 +478,38 @@ function parseVoiceElements(container: Element): MscxElement[] {
   let pendingDynamic: { subtype: string; velocity?: number } | null = null;
   let pendingHairpinStarts: { number: number; subtype: number }[] = [];
   let pendingExpressionText: string | null = null;
+  // Tuplet tracking
+  let tupletActual = 0;
+  let tupletNormal = 0;
+  let tupletCount = 0; // how many elements parsed so far in this tuplet
 
   for (let i = 0; i < container.children.length; i++) {
     const child = container.children[i];
-    if (child.tagName === "Chord") {
+    if (child.tagName === "Tuplet") {
+      tupletActual = parseInt(childText(child, "actualNotes")) || 3;
+      tupletNormal = parseInt(childText(child, "normalNotes")) || 2;
+      tupletCount = 0;
+    } else if (child.tagName === "endTuplet") {
+      // Mark the last element as tuplet stop
+      if (elements.length > 0) {
+        const last = elements[elements.length - 1];
+        if (last.tuplet) last.tuplet.isStop = true;
+      }
+      tupletActual = 0;
+      tupletNormal = 0;
+      tupletCount = 0;
+    } else if (child.tagName === "Chord") {
       const chord = parseChord(child);
+      // Attach tuplet info
+      if (tupletActual > 0) {
+        chord.tuplet = {
+          actualNotes: tupletActual,
+          normalNotes: tupletNormal,
+          isStart: tupletCount === 0,
+          isStop: false,
+        };
+        tupletCount++;
+      }
       // Attach pending dynamic
       if (pendingDynamic) {
         chord.dynamic = pendingDynamic;
@@ -457,7 +528,18 @@ function parseVoiceElements(container: Element): MscxElement[] {
       elements.push(chord);
       lastChord = chord;
     } else if (child.tagName === "Rest") {
-      elements.push(parseRest(child));
+      const rest = parseRest(child);
+      // Attach tuplet info to rests too
+      if (tupletActual > 0) {
+        rest.tuplet = {
+          actualNotes: tupletActual,
+          normalNotes: tupletNormal,
+          isStart: tupletCount === 0,
+          isStop: false,
+        };
+        tupletCount++;
+      }
+      elements.push(rest);
       lastChord = null;
     } else if (child.tagName === "Lyrics") {
       // Lyrics in v3 are siblings of Chord inside <voice>, attach to preceding chord

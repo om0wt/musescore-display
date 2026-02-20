@@ -29,6 +29,7 @@ It parses the native MuseScore XML format, converts it to MusicXML, and renders 
 - Ornaments (trill, mordent, turn, inverted turn, etc.)
 - Fermatas (upright, inverted; both chord-level and voice-level)
 - Fingerings
+- Tuplets (triplets, duplets, and other groupings with bracket display)
 
 ### Dynamics and Expression
 
@@ -269,7 +270,6 @@ Three test scores are included in the repository root:
 The following MSCX features are not yet supported:
 
 - Volta brackets (1st/2nd endings)
-- Tuplets
 - Pedal markings
 - Page layout and system/page breaks
 - Chord symbols

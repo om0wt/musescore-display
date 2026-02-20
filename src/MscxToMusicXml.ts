@@ -4,7 +4,7 @@
  * Builds a MusicXML score-partwise document that OSMD can render.
  */
 
-import { MscxScore, MscxPart, MscxMeasure, MscxVoice, MscxChord, MscxRest, MscxElement, MscxTempo } from "./MscxTypes";
+import { MscxScore, MscxPart, MscxMeasure, MscxVoice, MscxChord, MscxRest, MscxElement, MscxTempo, MscxTupletInfo } from "./MscxTypes";
 import { tpcToPitch } from "./TpcUtils";
 import { DURATION_MAP, calcDuration, getClefInfo, getAccidentalName, NOTATION_MAP } from "./ConvertHelpers";
 
@@ -310,6 +310,15 @@ function buildPart(doc: Document, partEl: Element, part: MscxPart, score: MscxSc
   }
 }
 
+/** Calculate actual tick duration, adjusted for tuplets. */
+function calcTupletAdjustedDuration(elem: MscxElement): number {
+  const baseDuration = calcDuration(elem.durationType, elem.dots);
+  if (elem.tuplet) {
+    return Math.round(baseDuration * elem.tuplet.normalNotes / elem.tuplet.actualNotes);
+  }
+  return baseDuration;
+}
+
 /** Compute beat-aware beam groups for a voice. Breaks beams at beat boundaries. */
 function computeBeamGroups(
   elements: MscxElement[],
@@ -357,14 +366,14 @@ function computeBeamGroups(
       }
       if (groupIndices.length === 0) groupBeat = Math.floor(currentTick / beatTicks);
       groupIndices.push(i);
-      currentTick += calcDuration(elem.durationType, (elem as MscxChord).dots);
+      currentTick += calcTupletAdjustedDuration(elem);
     } else {
       flushGroup();
       // Advance tick for non-beamable elements
       if (elem.type === "chord") {
-        currentTick += calcDuration(elem.durationType, elem.dots);
+        currentTick += calcTupletAdjustedDuration(elem);
       } else if (elem.type === "rest" && !elem.isMeasureRest) {
-        currentTick += calcDuration(elem.durationType, elem.dots);
+        currentTick += calcTupletAdjustedDuration(elem);
       }
     }
   }
@@ -472,7 +481,10 @@ function emitChord(
   beamStatus?: string,
   stemDirection?: string
 ): void {
-  const duration = calcDuration(chord.durationType, chord.dots);
+  const baseDuration = calcDuration(chord.durationType, chord.dots);
+  const duration = chord.tuplet
+    ? Math.round(baseDuration * chord.tuplet.normalNotes / chord.tuplet.actualNotes)
+    : baseDuration;
   const xmlType = DURATION_MAP[chord.durationType]?.xmlType ?? "quarter";
 
   const isGrace = !!chord.graceType;
@@ -536,6 +548,13 @@ function emitChord(
       appendElement(doc, noteEl, "dot");
     }
 
+    // Time modification (for tuplets)
+    if (chord.tuplet) {
+      const timeMod = appendElement(doc, noteEl, "time-modification");
+      appendTextElement(doc, timeMod, "actual-notes", String(chord.tuplet.actualNotes));
+      appendTextElement(doc, timeMod, "normal-notes", String(chord.tuplet.normalNotes));
+    }
+
     // Accidental
     if (note.accidental) {
       const accName = getAccidentalName(note.accidental);
@@ -559,15 +578,16 @@ function emitChord(
       appendTextElement(doc, noteEl, "beam", beamStatus).setAttribute("number", "1");
     }
 
-    // Notations (tied, slurs, ornaments, articulations, technical, fermata, arpeggio, fingering)
+    // Notations (tied, slurs, tuplet, ornaments, articulations, technical, fermata, arpeggio, fingering)
     const hasTie = note.tieStart || note.tieEnd;
     const hasSlur = n === 0 && ((chord.slurStarts && chord.slurStarts.length > 0) || (chord.slurStops && chord.slurStops.length > 0));
+    const hasTuplet = n === 0 && chord.tuplet && (chord.tuplet.isStart || chord.tuplet.isStop);
     const hasOrnaments = n === 0 && chord.ornaments && chord.ornaments.length > 0;
     const hasArticulations = n === 0 && chord.articulations && chord.articulations.length > 0;
     const hasArpeggio = chord.arpeggio !== undefined;
     const hasFermata = n === 0 && !!chord.fermata;
     const hasFingering = !!note.fingering;
-    if (hasTie || hasSlur || hasOrnaments || hasArticulations || hasArpeggio || hasFermata || hasFingering) {
+    if (hasTie || hasSlur || hasTuplet || hasOrnaments || hasArticulations || hasArpeggio || hasFermata || hasFingering) {
       const notations = appendElement(doc, noteEl, "notations");
       if (note.tieEnd) {
         const tied = appendElement(doc, notations, "tied");
@@ -592,6 +612,18 @@ function emitChord(
             slur.setAttribute("number", String(num));
             slur.setAttribute("type", "start");
           }
+        }
+      }
+      // Tuplet start/stop (only on first note)
+      if (n === 0 && chord.tuplet) {
+        if (chord.tuplet.isStart) {
+          const tupEl = appendElement(doc, notations, "tuplet");
+          tupEl.setAttribute("type", "start");
+          tupEl.setAttribute("bracket", "yes");
+        }
+        if (chord.tuplet.isStop) {
+          const tupEl = appendElement(doc, notations, "tuplet");
+          tupEl.setAttribute("type", "stop");
         }
       }
       // Ornaments, articulations, technical, fermata (only on first note)
@@ -718,7 +750,10 @@ function emitRest(
     duration = measureDuration;
     xmlType = "whole";
   } else {
-    duration = calcDuration(rest.durationType, rest.dots);
+    const baseDuration = calcDuration(rest.durationType, rest.dots);
+    duration = rest.tuplet
+      ? Math.round(baseDuration * rest.tuplet.normalNotes / rest.tuplet.actualNotes)
+      : baseDuration;
     xmlType = DURATION_MAP[rest.durationType]?.xmlType ?? "quarter";
   }
 
@@ -730,12 +765,33 @@ function emitRest(
     appendElement(doc, noteEl, "dot");
   }
 
+  // Time modification (for tuplets)
+  if (rest.tuplet) {
+    const timeMod = appendElement(doc, noteEl, "time-modification");
+    appendTextElement(doc, timeMod, "actual-notes", String(rest.tuplet.actualNotes));
+    appendTextElement(doc, timeMod, "normal-notes", String(rest.tuplet.normalNotes));
+  }
+
   if (stemDirection) {
     appendTextElement(doc, noteEl, "stem", stemDirection);
   }
 
   if (isMultiStaff) {
     appendTextElement(doc, noteEl, "staff", String(staffNum));
+  }
+
+  // Tuplet notations (start/stop)
+  if (rest.tuplet && (rest.tuplet.isStart || rest.tuplet.isStop)) {
+    const notations = appendElement(doc, noteEl, "notations");
+    if (rest.tuplet.isStart) {
+      const tupEl = appendElement(doc, notations, "tuplet");
+      tupEl.setAttribute("type", "start");
+      tupEl.setAttribute("bracket", "yes");
+    }
+    if (rest.tuplet.isStop) {
+      const tupEl = appendElement(doc, notations, "tuplet");
+      tupEl.setAttribute("type", "stop");
+    }
   }
 }
 

@@ -64,11 +64,20 @@ export interface MscxVoice {
 
 export type MscxElement = MscxChord | MscxRest;
 
+export interface MscxTupletInfo {
+  actualNotes: number;
+  normalNotes: number;
+  isStart: boolean;
+  isStop: boolean;
+}
+
 export interface MscxChord {
   type: "chord";
   durationType: string;
   dots: number;
   notes: MscxNote[];
+  /** Tuplet info if this element is part of a tuplet group */
+  tuplet?: MscxTupletInfo;
   lyrics?: MscxLyric[];
   /** Verse labels (e.g. "Kyrie: 1.") keyed by verse number (0-based). */
   verseLabels?: { number: number; text: string }[];
@@ -111,6 +120,8 @@ export interface MscxRest {
   durationType: string;
   dots: number;
   isMeasureRest: boolean;
+  /** Tuplet info if this element is part of a tuplet group */
+  tuplet?: MscxTupletInfo;
 }
 
 export interface MscxLyric {
